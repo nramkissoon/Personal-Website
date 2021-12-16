@@ -1,7 +1,12 @@
 {
   "extends": "tsconfig/react-library.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "index.tsx"],
+  "exclude": ["node_modules"],
   "compilerOptions": {
-    "jsx": "react-jsx"
-  },
-  "exclude": ["node_modules"]
+      "lib": ["ES2015"],
+      "module": "ESNext",
+      "rootDir": "./",
+      "outDir": "dist",
+      "jsx": "react"
+    }
 }

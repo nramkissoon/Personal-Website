@@ -9,7 +9,7 @@ export default class Document extends NextDocument {
             defer
             data-domain="blog.nickramkissoon.com"
             src="https://plausible.io/js/plausible.js"
-          ></script>
+          />
         </Head>
         <body>
           <Main />

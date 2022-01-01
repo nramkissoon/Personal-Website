@@ -1,4 +1,4 @@
-const withTM = require("next-transpile-modules")(["ui"],  {resolveSymlinks: false});
+const withTM = require("next-transpile-modules")(["ui"]);
 
 module.exports = withTM({
   reactStrictMode: true,

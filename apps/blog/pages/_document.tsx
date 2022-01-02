@@ -10,8 +10,18 @@ export default class Document extends NextDocument {
             data-domain="blog.nickramkissoon.com"
             src="https://plausible.io/js/plausible.js"
           />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossOrigin="true"
+          />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;700&display=swap"
+            rel="stylesheet"
+          />
         </Head>
-        <body>
+        <body className="bg-zinc-900 text-slate-100">
           <Main />
           <NextScript />
         </body>

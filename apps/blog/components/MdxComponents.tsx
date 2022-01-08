@@ -16,6 +16,7 @@ export const MDXComponents: Record<string, ReactNode> = {
   a: (props: any) => (
     <a
       className="font-light text-sky-400 text-md hover:text-sky-600"
+      target="_blank"
       {...props}
     />
   ),

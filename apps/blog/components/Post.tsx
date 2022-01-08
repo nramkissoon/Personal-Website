@@ -2,7 +2,8 @@ import { NextSeo, NextSeoProps } from "next-seo";
 import Link from "next/link";
 import React from "react";
 
-export interface SEOProps extends Pick<NextSeoProps, "title" | "description"> {}
+export interface SEOProps
+  extends Pick<NextSeoProps, "title" | "description" | "canonical"> {}
 
 interface MDXLayoutProps {
   frontMatter: any;
@@ -13,6 +14,7 @@ interface PostContainerProps {
     slug: string;
     title: string;
     description: string;
+    canonical?: string;
   };
 }
 
@@ -34,12 +36,13 @@ const ArrowSVG = () => (
   </svg>
 );
 
-export const SEO = ({ title, description }: SEOProps) => (
+export const SEO = ({ title, description, canonical }: SEOProps) => (
   <NextSeo
     title={title}
     description={description}
     openGraph={{ title, description }}
     titleTemplate={"%s | Nick's Blog"}
+    canonical={canonical}
   />
 );
 
@@ -54,10 +57,10 @@ export const PostContainer: React.FC<PostContainerProps> = ({
   frontMatter,
   children,
 }) => {
-  const { slug, title, description } = frontMatter;
+  const { slug, title, description, canonical } = frontMatter;
   return (
     <>
-      <SEO title={title} description={description} />
+      <SEO title={title} description={description} canonical={canonical} />
       <div className="container max-w-4xl pt-12 mx-auto p-7 selection:bg-teal-700 selection:text-slate-50">
         <Link passHref href="/">
           <div className="flex text-slate-100 hover:text-rose-500 group hover:cursor-pointer w-fit">

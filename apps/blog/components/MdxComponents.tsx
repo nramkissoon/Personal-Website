@@ -89,7 +89,6 @@ export const MDXComponents: Record<string, ReactNode> = {
     );
   },
   img: (props: any) => {
-    console.log(props);
     return (
       <div className="w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}

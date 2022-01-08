@@ -34,6 +34,7 @@ export const getStaticProps = async ({ params: { slug } }) => {
     "utf-8"
   );
   const { data: frontMatter, content } = matter(markdownWithMeta);
+  console.log(frontMatter);
   const mdxSource = await serialize(content);
   return {
     props: {

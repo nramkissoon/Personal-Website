@@ -1,0 +1,183 @@
+---
+title: "Schedule AWS Lambda Invocations With EventBridge and AWS CDK"
+description: "Guide on how use AWS CDK and EventBridge to invoke a Lambda function on a set schedule."
+date: "2021-09-13"
+---
+
+AWS Lambda is great for running jobs that do not require a server running 24/7. A Lambda function can be invoked
+by events, other AWS services, the AWS CLI, and much more, making it incredibly versatile and easy to integrate with.
+
+A common use case for Lambda is needing to run a function every x period of time. For example, supposed we want to scrape a website
+every 24 hours for new content, we can schedule a Lambda function to do exactly that using AWS EventBridge Rules.
+
+In this tutorial, we'll use AWS CDK to define a simple Lambda function that will be invoked every 5 minutes by an AWS EventBridge Rule.
+
+_This tutorial is for AWS/AWS CDK beginners/intermediates._
+
+### Prerequisites
+
+1. An AWS account
+2. Have the AWS CDK CLI installed and configured. Follow [these setup instructions from AWS](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html).
+3. A basic understanding of CDK Stacks and Constructs.
+
+## Project Setup + Follow-Along Repository
+
+First, we need to setup a CDK project.
+
+```bash terminal=true
+mkdir <PROJECT_NAME>
+cd <PROJECT_NAME>
+cdk init
+npm install @aws-cdk/aws-events-targets @aws-cdk/aws-events @aws-cdk/aws-lambda
+rm -rf test/
+mkdir lib/lambda-code && touch lib/lambda-code/code.js
+mkdir lib/constructs && cd lib/constructs \
+ && touch lambda-construct.ts event-construct.ts
+```
+
+The above commands will initialize a new CDK project in the `PROJECT_NAME` directory and add a few
+files we will be using to write our Lambda and Event constructs and Lambda code.
+
+I have created a public GitHub repository with all of the code we will be writing here so that you can clone it or follow along.
+
+[GitHub repository](https://github.com/nramkissoon/AWS-CDK-Schedule-Lambda-Tutorial)
+
+## Creating a Simple Lambda Function
+
+Let's define our Lambda function code in `code.js`:
+
+```javascript filename=code.js
+exports.handler = async function (event) {
+  console.log("request:", JSON.stringify(event, undefined, 2));
+  return {
+    statusCode: 200,
+    headers: { "Content-Type": "text/plain" },
+    body: "Hello World",
+  };
+};
+```
+
+This handler simply logs the event that the function receives and then returns a 'Hello World' message.
+
+Now, let's define the Lambda function that will use this code in `lambda-construct.ts`.
+
+```typescript filename=lambda-construct.ts
+import * as cdk from "@aws-cdk/core";
+import * as lambda from "@aws-cdk/aws-lambda";
+import { Construct } from "./constructs";
+
+export class SimpleLambdaConstruct extends cdk.Construct {
+  public readonly lambda: lambda.Function;
+
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
+    this.lambda = new lambda.Function(this, "lambdaFunction", {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      code: lambda.Code.fromAsset("lib/lambda-code"),
+      handler: "code.handler",
+    });
+  }
+}
+```
+
+The above code creates a new CDK Construct that contains our Lambda function.
+In the class constructor, we create a new Lambda function that simple prints 'Hello World' on every invocation.
+The `SimpleLambdaConstruct` class exposes the Lambda function to the outside world in the class variable `this.lambda`.
+
+## Creating an AWS EventBridge Rule and Integrating Lambda
+
+Now, let's implement our Event Rule Construct in `event-rule.ts`.
+
+```typescript filename=event-rule.ts
+import { Construct } from "@aws-cdk/core";
+import * as events from "@aws-cdk/aws-events";
+
+export class EventConstruct extends Construct {
+  public eventRule: events.Rule;
+
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
+
+    this.eventRule = new events.Rule(this, "fiveMinuteRule", {
+      schedule: events.Schedule.cron({ minute: "0/5" }),
+    });
+  }
+}
+```
+
+The above code defines an Event Rule that will trigger an event every 5 minutes. However, we need to
+send this event to our Lambda function, which currently does not know our Event Rule exists. This is the last step we need to do.
+
+In `lambda-schedule-stack.ts`, we instantiate our lambda and event rule constructs:
+
+```typescript filename=lambda-schedule-stack.ts
+import * as cdk from "@aws-cdk/core";
+import * as targets from "@aws-cdk/aws-events-targets";
+import * as events from "@aws-cdk/aws-events";
+import { EventConstruct } from "./constructs/event-construct";
+import { SimpleLambdaConstruct } from "./constructs/lambda-construct";
+
+export class LambdaScheduleStack extends cdk.Stack {
+  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    const lambdaConstruct = new SimpleLambdaConstruct(
+      this,
+      "SimpleLambdaConstruct"
+    );
+    const eventRule = new EventConstruct(this, "EventConstruct");
+
+    // add the Lambda function as a target for the Event Rule
+    eventRule.eventRule.addTarget(
+      new targets.LambdaFunction(lambdaConstruct.lambda, {
+        event: events.RuleTargetInput.fromObject({ message: "Hello Lambda" }),
+      })
+    );
+
+    // allow the Event Rule to invoke the Lambda function
+    targets.addLambdaPermission(eventRule.eventRule, lambdaConstruct.lambda);
+  }
+}
+```
+
+In order to have our Event Rule send events and invoke our Lambda, we need to add the Lambda function as a _target_ to the rule.
+Then, we give the rule _permission_ to invoke the Lambda function.
+
+## CDK Deploy + Verifying Everything Works
+
+We can now try to deploy our CDK Stack to AWS.
+
+```bash terminal=true
+cdk synth
+cdk deploy
+```
+
+It will take a few minutes for all of the AWS resources to be created and ready to use. Once that is over and you see
+no errors, you can log in to your AWS account and view the resources created to verify everything is working.
+
+First, let's check out the EventBridge console to view our new Rule:
+
+![event rule](/schedule-aws-lambda-invocations/event-rule.png)
+
+If we go the Lambda console we will see our lambda function, with our EventBridge trigger and handler code:
+
+![lambda](/schedule-aws-lambda-invocations/lambda.png)
+
+Finally, let's see if our Lambda is getting invoked every 5 minutes. If you go to the **Monitor** tab in the Lambda console,
+you will see links to CloudWatch logs for the function's invocations. Of course, you'll have to wait at least 5 minutes for anything to
+show up in the logs, however, once the function has been invoked, the logs will look something like this:
+
+![invocation logs](/schedule-aws-lambda-invocations/logs.png)
+
+We see EventBridge sending "Hello Lambda" to the function every 5 minutes. Success!
+
+## Cleanup + Conclusion
+
+To avoid leaving around unused resources in our AWS account, we can remove the CDK stack and associated resources with:
+
+```bash terminal=true
+cdk destroy
+```
+
+That's it! Now you know how to run any Lambda function on a set schedule using AWS EventBridge Rules. Better yet, you can now
+use AWS CDK to define you resources instead of manually created them in the console.

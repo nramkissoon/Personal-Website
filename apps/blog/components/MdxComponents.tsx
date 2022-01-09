@@ -15,13 +15,13 @@ export const MDXComponents: Record<string, ReactNode> = {
   h3: (props: any) => <h3 className="mb-4 text-2xl font-medium" {...props} />,
   a: (props: any) => (
     <a
-      className="font-light text-sky-400 text-md hover:text-sky-600"
+      className="font-normal text-sky-600 text-md hover:text-sky-400"
       target="_blank"
       {...props}
     />
   ),
   p: (props: any) => (
-    <p className="mb-5 text-xl font-light leading-8 tracking-wide" {...props} />
+    <p className="mb-5 text-xl font-normal leading-8" {...props} />
   ),
   strong: (props: any) => (
     <strong
@@ -33,17 +33,14 @@ export const MDXComponents: Record<string, ReactNode> = {
     <hr className="border-2 my-9 border-slate-700" {...props} />
   ),
   ul: (props: any) => (
-    <ul className="list-disc list-insid marker:text-slate-100" {...props} />
+    <ul className="list-disc list-inside marker:text-slate-900" {...props} />
   ),
   ol: (props: any) => (
-    <ol className="list-decimal list-inside marker:text-slate-100" {...props} />
+    <ol className="list-decimal list-inside marker:text-slate-900" {...props} />
   ),
   li: (props: any) => (
-    <li
-      className="text-xl font-light leading-7 tracking-wide text-slate-400"
-      {...props}
-    >
-      <span className="text-slate-100">{props.children}</span>
+    <li className="text-xl leading-7 text-slate-900" {...props}>
+      <span className="text-slate-900">{props.children}</span>
     </li>
   ),
   code: (props: any) => {

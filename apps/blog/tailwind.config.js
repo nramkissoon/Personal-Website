@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     fontFamily: {
       'sans': ['Spline Sans',  ...defaultTheme.fontFamily.sans],
-      'serif': [...defaultTheme.fontFamily.serif],
+      'serif': ['Roboto', ...defaultTheme.fontFamily.serif],
       'mono': ['Consolas',...defaultTheme.fontFamily.mono]
     },
     extend: {

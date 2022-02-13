@@ -1,0 +1,73 @@
+---
+title: "How to Pick the Tech Stack for Your Next Project"
+description: "Picking a tech stack is a difficult decision that can be costly, but the same general principles should always apply."
+date: "2022-01-08"
+---
+
+With a new JavaScript framework dropping every week and tech evangelists (now known as "developer advocates") on Twitter constantly promoting a new acronym
+constantly, picking a tech stack for a new project has become a source of stress for new developers.
+For experienced developers, the advice I'm about to give in this post will probably common sense, but for more inexperienced developers
+breaking into tech, being sold several different tech stacks and frameworks at the time will naturally lead to confusion and decision paralysis which leads to not learning anything at all.
+This is especially prevalent in the web development world. New developers are told the benefits and pain points of learning React, Vue, Next.js, Remix, SolidJS, Svelte, Node, etc. New developers
+shouldn't be concerned with the pros of cons of A vs B, they just want to build a todo app or portfolio.
+
+**The reality is, all of these different programming languages, frameworks, services, etc. are just tools to solve problems.** Software engineering is about problem solving,
+regardless of what tools are used. To be a software engineer is to be a problem-solver, not a specific framework user. Of course, all tools and tech stacks are different. Ideally,
+any tech stack aims to make solving a particular set of problems more efficient. Some stacks are better than others for some problems, so it is a software engineers job to pick the best
+tooling for the job **and not be stubborn to change tools when the problem changes or better tools are available**.
+
+So how do you pick the right tools for the job? Depends on the job, but in general, there are few general guiding principles that will get you 90% of the way there.
+
+Let me be clear on this point though. We are lucky these days that tools like React provide good primitives that allow
+developers to solve an enormous variety of problems effectively without worry. Some tools may not be the best, but just good enough is all that is needed most of the time.
+So, picking a tool really boils down to familiarity more than anything most of the time.
+If you need to implement something or solve a problem quickly, it is probably not worth spending a day reading the docs on a completely new tool.
+
+Another point: this is **not** a guide on what to learn in 2022 for new developers. Again, this is a list of concepts to keep in mind when choosing the tools to solve your specific use case.
+
+## Define the problem as best you can.
+
+First step in choosing a tech stack is defining what you are trying to achieve with it. I believe this point doesn't reach new developers that well because the problems they try to solve, such as
+building a simple CRUD app, can be solved effectively by several different tech stacks. For this reason, I encourage new developers to escape tutorial hell by solving more specific problem and
+pushing past the limits of a simple CRUD application or todo app.
+
+When defining the problem you are trying to solve, a lot of factors will drive your tech stack choices such as:
+
+- how and where to deploy
+- data storage, if required
+- frontend UI requirements
+- etc...
+
+Giving serious consideration to these things will help guide your tech stack decision before you go run off building in the wrong direction. Even then, requirements and problem scope will change,
+so always be ready to be flexible in that regard. Pick technologies that solve the specific problem you have defined, and if the definition changes, adjust your tech stack accordingly.
+
+## Developer experience is important.
+
+Tech stacks and frameworks with bad developer experience suck even if they are the absolute best tool for the job. If you do not enjoy the development experience, what's the point?
+It just drives away people from software development as they grow frustrated by poor developer experience. Say you wanted to deploy a static site, and you are deciding between AWS S3 and Vercel. If
+you do not already have experience deploying to S3, Vercel is clearly the better option. Choosing to learn how S3 works adds an additional problem on top of the original goal of deploying a
+static site.
+
+Good developer experience encourages developers to make good decisions. For example, in the TypeScript vs. JavaScript debate, TypeScript encourages you to use types and will warn you when
+your code will lead to unexpected errors. Plain JavaScript offers no type system which will **always** lead to bugs down the road with no help on how to track it down. Simply put, tools with good
+developer experience will make you a better developer, which will in turn make whatever you are building better, and you will be less frustrated from fighting with the tooling.
+
+## Choosing the wrong stack is not permanent.
+
+If you regret the framework or tool for whatever reason, it's important to remember that those decisions are not permanent and can be fixed.
+Most of us are not making software where failure can cause harm to our users. Refactoring and rewriting is a part of software development, and it improves
+software quality in the long run.
+
+For newer developers who experience imposter syndrome, feeling like you chose the wrong tech can hurt your self-confidence as a developer. Unfortunately,
+marketing material for new frameworks and tools often try to gain users by making people feel bad for not choosing it. Not choosing the "right" tech stack is not a moral failing.
+
+## Conclusions
+
+So how do you pick the right tech stack? Depends on the job and what's interesting/familiar to you. My advice to more junior developers is to spend less time deciding between different technologies
+and watching breakdowns of pros and cons of each and to start building. If you find that you don't like what you are using, switch to something else.
+
+Learning how to solve a variety of problems in different domains will naturally guide you towards learning a variety of technologies.
+Do not learn a bunch of technologies in a vacuum just to learn them.
+
+The inspiration for this post comes from [https://init.tips/](https://init.tips/), a simple website made by some talented engineers. It gives good suggestions and
+guiding principles for picking a tech stack, which I drew extensively from for this post.

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ReactNode } from "react";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { darcula } from "react-syntax-highlighter/dist/cjs/styles/prism";
@@ -91,6 +92,24 @@ export const MDXComponents: Record<string, ReactNode> = {
       <div className="w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img alt="" {...props} />
+      </div>
+    );
+  },
+  HostedImg: (props: any) => {
+    return (
+      <div className="w-full my-2">
+        <Image
+          height={props.height}
+          width={props.width}
+          alt={props.alt}
+          src={props.src}
+          layout="responsive"
+          quality={80}
+          placeholder="empty"
+        />
+        <div className="m-auto mt-2 font-medium text-center text-gray-600">
+          {props.alt}
+        </div>
       </div>
     );
   },

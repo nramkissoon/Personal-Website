@@ -24,12 +24,7 @@ export const MDXComponents: Record<string, ReactNode> = {
   p: (props: any) => (
     <p className="mb-5 text-xl font-normal leading-8" {...props} />
   ),
-  strong: (props: any) => (
-    <strong
-      className="underline underline-offset-2 decoration-slate-600"
-      {...props}
-    />
-  ),
+  strong: (props: any) => <strong className="" {...props} />,
   hr: (props: any) => (
     <hr className="border-2 my-9 border-slate-700" {...props} />
   ),
@@ -45,9 +40,12 @@ export const MDXComponents: Record<string, ReactNode> = {
     </li>
   ),
   code: (props: any) => {
-    const language = props.className.split("-")[1];
-    const filename = props.filename;
-    const terminal = props.terminal;
+    const classes = props.className.split(",");
+
+    const language = classes[0].split("-")[1];
+    const filename = classes[1] !== "terminal" ? classes[1] : null;
+    const terminal = classes[1] === "terminal";
+
     // remove final \n
     const children = (props.children as string).slice(0, -1);
     return (
@@ -88,12 +86,7 @@ export const MDXComponents: Record<string, ReactNode> = {
     );
   },
   img: (props: any) => {
-    return (
-      <div className="w-full">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img alt="" {...props} />
-      </div>
-    );
+    return <img {...props} />;
   },
   HostedImg: (props: any) => {
     return (

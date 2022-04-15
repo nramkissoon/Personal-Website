@@ -148,22 +148,22 @@ We will write the Lambda function in JavaScript and use the Node.js runtime with
 
 Create a new directory on your system and run:
 
-```bash
+```bash,terminal
 npm init
 touch index.js
 ```
 
 Then, install the **AWS SDK** and **fetch** packages:
 
-```bash
+```bash,terminal
 npm install aws-sdk node-fetch
 ```
 
-To use ESM modules, open `package.json` and add `"type": "module"`.
+To use ESM modules, open _package.json_ and add _"type": "module"_.
 
-Open `index.js` and write the following code (Be sure to fill in your own website URL and SNS topic ARN.):
+Open _index.js_ and write the following code (Be sure to fill in your own website URL and SNS topic ARN.):
 
-```javascript
+```javascript,index.js
 import AWS from "aws-sdk";
 import fetch from "node-fetch";
 
@@ -243,11 +243,11 @@ Typically, we would want to read these values from the event that triggered the 
 To upload the code and dependencies to the Lambda function, we need to zip the files.
 On Linux, this can be done using:
 
-```bash
+```bash,terminal
 zip -r package.zip . *
 ```
 
-This command will create a `package.zip` file in the current directory, and it will contain everything needed for Lambda.
+This command will create a _package.zip_ file in the current directory, and it will contain everything needed for Lambda.
 
 On the Lambda function overview, go to the **Code** tab and upload the zip file containing the code.
 
@@ -270,7 +270,7 @@ Reupload a new zip file to the Lambda function, then test again. The Lambda logs
 To see the message, go to the SQS console for the queue and click on **Send and receive messages**. Click on **Poll for messages**, and you should be able to
 see messages in the queue. Click on it to see the message details, which should look like this JSON object:
 
-```json
+```json,terminal
 {
   "Type": "Notification",
   "MessageId": "a44c27f8-9c68-507e-8ba9-7d3b45a76115",

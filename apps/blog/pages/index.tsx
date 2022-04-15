@@ -3,7 +3,6 @@ import matter from "gray-matter";
 import { InferGetServerSidePropsType } from "next";
 import Link from "next/link";
 import path from "path";
-import React from "react";
 
 const ArrowSVG = () => (
   <svg
@@ -69,7 +68,7 @@ function Blog(props: InferGetServerSidePropsType<typeof getStaticProps>) {
         Nick&apos;s Blog
       </h1>
       <h2 className="mb-2 text-xl text-slate-600">
-        Ramblings about tech, learnings, project updates, etc.
+        Stuff about tech, learnings, project updates, etc.
       </h2>
       <hr className="mb-3 mt-9 border-slate-600" />
       <h2 className="text-2xl font-bold">Posts</h2>

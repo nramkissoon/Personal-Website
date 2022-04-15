@@ -25,7 +25,7 @@ _This tutorial is for AWS/AWS CDK beginners/intermediates._
 
 First, we need to setup a CDK project.
 
-```bash terminal=true
+```bash,terminal
 mkdir <PROJECT_NAME>
 cd <PROJECT_NAME>
 cdk init
@@ -36,7 +36,7 @@ mkdir lib/constructs && cd lib/constructs \
  && touch lambda-construct.ts event-construct.ts
 ```
 
-The above commands will initialize a new CDK project in the `PROJECT_NAME` directory and add a few
+The above commands will initialize a new CDK project in the _PROJECT_NAME_ directory and add a few
 files we will be using to write our Lambda and Event constructs and Lambda code.
 
 I have created a public GitHub repository with all of the code we will be writing here so that you can clone it or follow along.
@@ -45,9 +45,9 @@ I have created a public GitHub repository with all of the code we will be writin
 
 ## Creating a Simple Lambda Function
 
-Let's define our Lambda function code in `code.js`:
+Let's define our Lambda function code in _code.js_:
 
-```javascript filename=code.js
+```javascript,code.js
 exports.handler = async function (event) {
   console.log("request:", JSON.stringify(event, undefined, 2));
   return {
@@ -60,9 +60,9 @@ exports.handler = async function (event) {
 
 This handler simply logs the event that the function receives and then returns a 'Hello World' message.
 
-Now, let's define the Lambda function that will use this code in `lambda-construct.ts`.
+Now, let's define the Lambda function that will use this code in _lambda-construct.ts_.
 
-```typescript filename=lambda-construct.ts
+```typescript,lambda-construct.ts
 import * as cdk from "@aws-cdk/core";
 import * as lambda from "@aws-cdk/aws-lambda";
 import { Construct } from "./constructs";
@@ -83,13 +83,13 @@ export class SimpleLambdaConstruct extends cdk.Construct {
 
 The above code creates a new CDK Construct that contains our Lambda function.
 In the class constructor, we create a new Lambda function that simple prints 'Hello World' on every invocation.
-The `SimpleLambdaConstruct` class exposes the Lambda function to the outside world in the class variable `this.lambda`.
+The _SimpleLambdaConstruct_ class exposes the Lambda function to the outside world in the class variable _this.lambda_.
 
 ## Creating an AWS EventBridge Rule and Integrating Lambda
 
-Now, let's implement our Event Rule Construct in `event-rule.ts`.
+Now, let's implement our Event Rule Construct in _event-rule.ts_.
 
-```typescript filename=event-rule.ts
+```typescript,event-rule.ts
 import { Construct } from "@aws-cdk/core";
 import * as events from "@aws-cdk/aws-events";
 
@@ -109,9 +109,9 @@ export class EventConstruct extends Construct {
 The above code defines an Event Rule that will trigger an event every 5 minutes. However, we need to
 send this event to our Lambda function, which currently does not know our Event Rule exists. This is the last step we need to do.
 
-In `lambda-schedule-stack.ts`, we instantiate our lambda and event rule constructs:
+In _lambda-schedule-stack.ts_, we instantiate our lambda and event rule constructs:
 
-```typescript filename=lambda-schedule-stack.ts
+```typescript,lambda-schedule-stack.ts
 import * as cdk from "@aws-cdk/core";
 import * as targets from "@aws-cdk/aws-events-targets";
 import * as events from "@aws-cdk/aws-events";
@@ -148,7 +148,7 @@ Then, we give the rule _permission_ to invoke the Lambda function.
 
 We can now try to deploy our CDK Stack to AWS.
 
-```bash terminal=true
+```bash,terminal
 cdk synth
 cdk deploy
 ```
@@ -176,7 +176,7 @@ We see EventBridge sending "Hello Lambda" to the function every 5 minutes. Succe
 
 To avoid leaving around unused resources in our AWS account, we can remove the CDK stack and associated resources with:
 
-```bash terminal=true
+```bash,terminal
 cdk destroy
 ```
 

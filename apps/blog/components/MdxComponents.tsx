@@ -11,7 +11,7 @@ export const MDXComponents: Record<string, ReactNode> = {
     />
   ),
   h2: (props: any) => (
-    <h2 className="mb-4 text-4xl font-bold tracking-wide mt-7" {...props} />
+    <h2 className="mb-4 text-4xl font-bold tracking-tight mt-7" {...props} />
   ),
   h3: (props: any) => <h3 className="mb-4 text-2xl font-medium" {...props} />,
   a: (props: any) => (
@@ -22,7 +22,10 @@ export const MDXComponents: Record<string, ReactNode> = {
     />
   ),
   p: (props: any) => (
-    <p className="mb-5 text-xl font-normal leading-8" {...props} />
+    <p
+      className="mb-5 text-xl font-normal leading-8 tracking-tight"
+      {...props}
+    />
   ),
   strong: (props: any) => <strong className="" {...props} />,
   hr: (props: any) => (

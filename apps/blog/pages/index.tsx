@@ -36,7 +36,7 @@ const Post = (props: {
             {props.frontMatter.title}
           </h2>
           <p className="mb-4 text-lg ">{props.frontMatter.date}</p>
-          <p className="mb-2 text-xl tracking-wide ">
+          <p className="mb-2 text-xl font-main">
             {props.frontMatter.description}
           </p>
           <div className="flex text-slate-900 group-hover:text-rose-600">

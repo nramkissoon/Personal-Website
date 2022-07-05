@@ -41,7 +41,7 @@ export const SEO = ({ title, description, canonical }: SEOProps) => (
     title={title}
     description={description}
     openGraph={{ title, description }}
-    titleTemplate={"%s | Nick's Blog"}
+    titleTemplate={"%s"}
     canonical={canonical}
   />
 );
@@ -73,7 +73,7 @@ export const PostContainer: React.FC<PostContainerProps> = ({
         <h1 className="py-2 mt-3 mb-8 text-5xl font-bold tracking-wide text-slate-900">
           {title}
         </h1>
-        <div className="font-serif">{children}</div>
+        <div className="font-main">{children}</div>
         <hr className="border-1 my-9 border-slate-900" />
         <div className="flex flex-col items-center justify-between space-y-7 sm:flex-row sm:space-y-0">
           <Link passHref href="/">

@@ -16,6 +16,7 @@ interface PostContainerProps {
     title: string;
     description: string;
     canonical?: string;
+    date: string;
   };
 }
 
@@ -72,7 +73,7 @@ export const PostContainer: React.FC<PostContainerProps> = ({
   frontMatter,
   children,
 }) => {
-  const { slug, title, description, canonical } = frontMatter;
+  const { slug, title, description, canonical, date } = frontMatter;
   useHeadingFocusOnRouteChange();
 
   return (
@@ -87,7 +88,8 @@ export const PostContainer: React.FC<PostContainerProps> = ({
             Return to all posts
           </div>
         </Link>
-        <h1 className="py-2 mt-3 mb-8 text-5xl font-bold tracking-wide text-slate-900">
+        <p className="mt-3 font-medium text-slate-500 font-main">{date}</p>
+        <h1 className="mb-8 text-5xl font-bold tracking-wide text-slate-900">
           {title}
         </h1>
         <div className="font-main">{children}</div>

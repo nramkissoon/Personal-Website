@@ -1,5 +1,6 @@
 import { NextSeo, NextSeoProps } from "next-seo";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import React from "react";
 
 export interface SEOProps
@@ -16,6 +17,21 @@ interface PostContainerProps {
     description: string;
     canonical?: string;
   };
+}
+
+function useHeadingFocusOnRouteChange() {
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const onRouteChange = () => {
+      const [heading] = Array.from(document.getElementsByTagName("h1"));
+      heading?.focus();
+    };
+    router.events.on("routeChangeComplete", onRouteChange);
+    return () => {
+      router.events.off("routeChangeComplete", onRouteChange);
+    };
+  }, [router.events]);
 }
 
 const ArrowSVG = () => (
@@ -41,7 +57,6 @@ export const SEO = ({ title, description, canonical }: SEOProps) => (
     title={title}
     description={description}
     openGraph={{ title, description }}
-    titleTemplate={"%s"}
     canonical={canonical}
   />
 );
@@ -58,6 +73,8 @@ export const PostContainer: React.FC<PostContainerProps> = ({
   children,
 }) => {
   const { slug, title, description, canonical } = frontMatter;
+  useHeadingFocusOnRouteChange();
+
   return (
     <>
       <SEO title={title} description={description} canonical={canonical} />

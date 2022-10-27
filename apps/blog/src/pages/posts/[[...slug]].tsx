@@ -21,10 +21,7 @@ const Post = ({
 
 export const getStaticProps: GetStaticProps<{
   frontMatter: FrontMatter;
-  mdxSource: MDXRemoteSerializeResult<
-    Record<string, unknown>,
-    Record<string, string>
-  >;
+  mdxSource: MDXRemoteSerializeResult<Record<string, unknown>>;
 }> = async ({ params }) => {
   const markdownWithMeta = fs.readFileSync(
     path.join("src/content", params?.slug + ".mdx"),

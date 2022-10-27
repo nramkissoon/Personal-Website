@@ -19,7 +19,7 @@ const ArrowSVG = () => (
     height="24"
     viewBox="0 0 24 24"
     strokeWidth="1.5"
-    className="fill-rose-500 stroke-rose-500"
+    className="fill-amber-500 stroke-amber-500"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -35,16 +35,16 @@ const Post = (props: { frontMatter: FrontMatter; slug: string }) => {
     <div className="container mb-9 group">
       <Link href={"/posts/" + props.slug} passHref>
         <a>
-          <h2 className="mb-0 text-3xl font-bold tracking-wide text-slate-900 group-hover:text-rose-600">
+          <h2 className="mb-0 text-3xl font-bold tracking-wide group-hover:text-amber-500">
             {props.frontMatter.title}
           </h2>
-          <p className="mb-4 text-sm font-medium">
+          <p className="mb-4 text-sm font-medium text-zinc-400">
             {props.frontMatter.lastEdited?.date}
           </p>
           <p className="mb-2 text-xl font-medium">
             {props.frontMatter.description}
           </p>
-          <div className="flex text-slate-900 group-hover:text-rose-600">
+          <div className="flex group-hover:text-amber-500">
             Read more
             <div className="hidden ml-2 group-hover:inline animate-bounce-horizontal">
               <ArrowSVG />
@@ -71,27 +71,25 @@ function Blog(props: StaticProps) {
 
   return (
     <div className="container max-w-4xl pt-12 mx-auto p-7">
-      <h1 className="text-2xl font-bold tracking-wide text-slate-900">
-        Nick&apos;s Blog
-      </h1>
-      <h2 className="mb-2 text-xl text-slate-600 font-medium">
+      <h1 className="text-2xl font-bold tracking-wide">Nick&apos;s Blog</h1>
+      <h2 className="mb-2 text-xl text-zinc-400 font-medium">
         Stuff about tech, learnings, project updates, etc.
       </h2>
-      <hr className="mb-3 mt-9 border-slate-600" />
+      <hr className="mb-3 mt-9 border-zinc-400" />
       <h2 className="text-2xl font-bold">Posts</h2>
       <div className="mt-6">
         {props.frontMatters.map((post) => (
           <Post frontMatter={post} slug={post.slug} key={post.slug} />
         ))}
       </div>
-      <hr className=" my-9 border-slate-600" />
+      <hr className=" my-9 border-slate-400" />
       <div className="flex flex-col items-center justify-between space-y-7 sm:flex-row sm:space-y-0">
         <div className="flex space-x-5">
           <Link passHref href="https://github.com/nramkissoon">
             <a target="_blank" rel="noreferrer">
               <svg
                 viewBox="0 0 16 16"
-                className="w-6 h-6 fill-slate-800 hover:cursor-pointer hover:fill-gray-600"
+                className="w-6 h-6 fill-zinc-50 hover:cursor-pointer hover:fill-zinc-400"
               >
                 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
               </svg>
@@ -102,7 +100,7 @@ function Blog(props: StaticProps) {
             <a target="_blank" rel="noreferrer">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="w-6 h-6 fill-slate-800 hover:cursor-pointer hover:fill-gray-600 "
+                className="w-6 h-6 fill-slate-50 hover:cursor-pointer hover:fill-gray-300"
                 viewBox="0 0 24 24"
               >
                 <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />

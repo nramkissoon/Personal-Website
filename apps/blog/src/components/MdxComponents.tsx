@@ -6,7 +6,7 @@ import { darcula } from "react-syntax-highlighter/dist/cjs/styles/prism";
 export const MDXComponents = {
   h1: (props: any) => (
     <h1
-      className="mb-0 text-6xl font-bold tracking-wide text-rose-600"
+      className="mb-0 text-6xl font-bold tracking-wide text-zinc-100"
       {...props}
     />
   ),
@@ -32,14 +32,14 @@ export const MDXComponents = {
     <hr className="border-2 my-9 border-slate-700" {...props} />
   ),
   ul: (props: any) => (
-    <ul className="list-disc list-inside marker:text-slate-900" {...props} />
+    <ul className="list-disc list-inside marker:text-slate-100" {...props} />
   ),
   ol: (props: any) => (
-    <ol className="list-decimal list-inside marker:text-slate-900" {...props} />
+    <ol className="list-decimal list-inside marker:text-slate-100" {...props} />
   ),
   li: (props: any) => (
-    <li className="text-xl leading-7 text-slate-900" {...props}>
-      <span className="text-slate-900">{props.children}</span>
+    <li className="text-xl leading-7 text-slate-100" {...props}>
+      <span className="text-slate-100">{props.children}</span>
     </li>
   ),
   code: (props: any) => {
@@ -103,7 +103,7 @@ export const MDXComponents = {
           quality={80}
           placeholder="empty"
         />
-        <div className="m-auto mt-2 font-medium text-center text-gray-600">
+        <div className="m-auto mt-2 font-medium text-center text-zinc-400">
           {props.alt}
         </div>
       </div>

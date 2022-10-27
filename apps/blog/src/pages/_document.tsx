@@ -11,7 +11,7 @@ export default class Document extends NextDocument {
             src="https://plausible.io/js/plausible.js"
           />
         </Head>
-        <body className="bg-zinc-50 text-slate-900 font-sans tracking-tight">
+        <body className="bg-zinc-900 text-zinc-100 font-sans tracking-tight">
           <Main />
           <NextScript />
         </body>

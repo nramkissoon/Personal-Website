@@ -73,10 +73,7 @@ export const processRawFrontMatter = async ({
   frontMatter: any;
   slug: string;
   path: string;
-  mdxSource: MDXRemoteSerializeResult<
-    Record<string, unknown>,
-    Record<string, string>
-  >;
+  mdxSource: MDXRemoteSerializeResult<Record<string, unknown>>;
   mdxContent: string;
   excerpt: string;
 }): Promise<FrontMatter> => {

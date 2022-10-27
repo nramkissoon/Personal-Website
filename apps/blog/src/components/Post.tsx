@@ -90,8 +90,6 @@ export const PostContainer: React.FC<{
   const { title, openGraph, tags, lastEdited } = frontMatter;
   useHeadingFocusOnRouteChange();
 
-  console.log(frontMatter);
-
   return (
     <>
       <Seo

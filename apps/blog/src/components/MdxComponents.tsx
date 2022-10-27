@@ -16,7 +16,7 @@ export const MDXComponents = {
   h3: (props: any) => <h3 className="mb-4 text-2xl font-medium" {...props} />,
   a: (props: any) => (
     <a
-      className="font-normal text-sky-600 text-md hover:text-sky-400"
+      className="font-normal text-violet-400 text-md hover:text-violet-600"
       target="_blank"
       {...props}
     />

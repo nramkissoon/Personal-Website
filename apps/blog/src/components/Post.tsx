@@ -42,7 +42,7 @@ const ArrowSVG = () => (
     height="24"
     viewBox="0 0 24 24"
     strokeWidth="1.5"
-    className="rotate-180 fill-amber-500 stroke-amber-500"
+    className="rotate-180 fill-rose-500 stroke-rose-500"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -97,9 +97,9 @@ export const PostContainer: React.FC<{
         description={openGraph.description}
         openGraph={openGraph}
       />
-      <div className="container max-w-4xl pt-12 mx-auto p-7 selection:bg-amber-700 selection:text-slate-50">
+      <div className="container max-w-4xl pt-12 mx-auto p-7 selection:bg-violet-800 selection:text-slate-50">
         <Link passHref href="/">
-          <div className="flex hover:text-amber-500 group hover:cursor-pointer w-fit">
+          <div className="flex hover:text-rose-500 group hover:cursor-pointer w-fit">
             <div className="hidden ml-2 group-hover:inline animate-bounce-horizontal">
               <ArrowSVG />
             </div>
@@ -124,7 +124,7 @@ export const PostContainer: React.FC<{
         <hr className="border-1 my-9 border-zinc-500" />
         <div className="flex flex-col items-center justify-between space-y-7 sm:flex-row sm:space-y-0">
           <Link passHref href="/">
-            <div className="flex hover:text-amber-500 group hover:cursor-pointer w-fit">
+            <div className="flex hover:text-rose-500 group hover:cursor-pointer w-fit">
               <div className="hidden ml-2 group-hover:inline animate-bounce-horizontal">
                 <ArrowSVG />
               </div>

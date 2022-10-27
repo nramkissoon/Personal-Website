@@ -1,8 +1,16 @@
 import fs from "fs";
 import matter from "gray-matter";
-import { InferGetServerSidePropsType } from "next";
+import {
+  GetStaticProps,
+  InferGetServerSidePropsType,
+  InferGetStaticPropsType,
+} from "next";
+import { serialize } from "next-mdx-remote/serialize";
 import Link from "next/link";
 import path from "path";
+import shell from "shelljs";
+import { FrontMatter } from "../components/Post";
+import { processRawFrontMatter } from "../utils/mdx";
 
 const ArrowSVG = () => (
   <svg
@@ -22,12 +30,7 @@ const ArrowSVG = () => (
   </svg>
 );
 
-const Post = (props: {
-  frontMatter: {
-    [key: string]: any;
-  };
-  slug: string;
-}) => {
+const Post = (props: { frontMatter: FrontMatter; slug: string }) => {
   return (
     <div className="container mb-9 group">
       <Link href={"/posts/" + props.slug} passHref>
@@ -35,14 +38,14 @@ const Post = (props: {
           <h2 className="mb-0 text-3xl font-bold tracking-wide text-slate-900 group-hover:text-rose-600">
             {props.frontMatter.title}
           </h2>
-          <p className="mb-4 text-lg font-medium font-main">
-            {props.frontMatter.date}
+          <p className="mb-4 text-sm font-medium">
+            {props.frontMatter.lastEdited?.date}
           </p>
-          <p className="mb-2 text-xl font-main">
+          <p className="mb-2 text-xl font-medium">
             {props.frontMatter.description}
           </p>
           <div className="flex text-slate-900 group-hover:text-rose-600">
-            Read More
+            Read more
             <div className="hidden ml-2 group-hover:inline animate-bounce-horizontal">
               <ArrowSVG />
             </div>
@@ -53,7 +56,9 @@ const Post = (props: {
   );
 };
 
-function Blog(props: InferGetServerSidePropsType<typeof getStaticProps>) {
+type StaticProps = InferGetStaticPropsType<typeof getStaticProps>;
+
+function Blog(props: StaticProps) {
   // const [pageIndex, setPageIndex] = React.useState(0);
   // const PAGE_SIZE = 6;
 
@@ -69,14 +74,14 @@ function Blog(props: InferGetServerSidePropsType<typeof getStaticProps>) {
       <h1 className="text-2xl font-bold tracking-wide text-slate-900">
         Nick&apos;s Blog
       </h1>
-      <h2 className="mb-2 text-xl text-slate-600">
+      <h2 className="mb-2 text-xl text-slate-600 font-medium">
         Stuff about tech, learnings, project updates, etc.
       </h2>
       <hr className="mb-3 mt-9 border-slate-600" />
       <h2 className="text-2xl font-bold">Posts</h2>
       <div className="mt-6">
-        {props.posts.map((post) => (
-          <Post {...post} key={post.slug} />
+        {props.frontMatters.map((post) => (
+          <Post frontMatter={post} slug={post.slug} key={post.slug} />
         ))}
       </div>
       <hr className=" my-9 border-slate-600" />
@@ -110,26 +115,41 @@ function Blog(props: InferGetServerSidePropsType<typeof getStaticProps>) {
   );
 }
 
-export const getStaticProps = async () => {
-  const files = fs.readdirSync("content/");
-  const posts = files
-    .map((filename) => {
-      const markdownWithMeta = fs.readFileSync(
-        path.join("content/", filename),
-        "utf-8"
+export const getStaticProps: GetStaticProps<{
+  frontMatters: FrontMatter[];
+}> = async ({ params }) => {
+  const dir = path.join(process.cwd(), "src/content");
+  const filenames = shell.ls("-R", `${dir}/**/*.mdx`);
+
+  const dataPromise = filenames.map(async (filename) => {
+    const filePath = path.resolve(filename);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(
+        `can't load MDX file ${filename} in ${filePath} does not exist`
       );
-      const { data: frontMatter } = matter(markdownWithMeta);
-      return {
-        frontMatter,
-        slug: filename.split(".")[0],
-      };
-    })
-    .sort(
-      (a, b) => Date.parse(b.frontMatter.date) - Date.parse(a.frontMatter.date) // sort most recent to oldest
-    );
+    }
+
+    const markdownWithMeta = fs.readFileSync(filePath, "utf-8");
+    const { data: rawFrontMatter, content } = matter(markdownWithMeta);
+    const mdxSource = await serialize(content);
+
+    const slug = filePath.substring(filePath.lastIndexOf("/") + 1);
+
+    return await processRawFrontMatter({
+      slug: slug.substring(0, slug.lastIndexOf(".mdx")),
+      frontMatter: rawFrontMatter,
+      mdxSource,
+      mdxContent: content,
+      path: path.join(process.cwd(), "src/content"),
+      excerpt: "",
+    });
+  });
+
+  const data = await Promise.all(dataPromise);
+
   return {
     props: {
-      posts,
+      frontMatters: data,
     },
   };
 };

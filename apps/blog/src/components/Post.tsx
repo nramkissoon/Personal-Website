@@ -1,23 +1,23 @@
 import { NextSeo, NextSeoProps } from "next-seo";
+import { OpenGraph } from "next-seo/lib/types";
+import { Tags } from "../utils/mdx";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
 
 export interface SEOProps
-  extends Pick<NextSeoProps, "title" | "description" | "canonical"> {}
+  extends Pick<NextSeoProps, "title" | "description" | "openGraph"> {}
 
-interface MDXLayoutProps {
-  frontMatter: any;
-}
-
-interface PostContainerProps {
-  frontMatter: {
-    slug: string;
-    title: string;
-    description: string;
-    canonical?: string;
+export interface FrontMatter {
+  slug: string;
+  title: string;
+  description: string;
+  openGraph: OpenGraph;
+  lastEdited: {
     date: string;
-  };
+    author: string | null;
+  } | null;
+  tags: Tags;
 }
 
 function useHeadingFocusOnRouteChange() {
@@ -53,14 +53,28 @@ const ArrowSVG = () => (
   </svg>
 );
 
-export const SEO = ({ title, description, canonical }: SEOProps) => (
+export const Seo = ({ title, description, openGraph }: SEOProps) => (
   <NextSeo
     title={title}
     description={description}
-    openGraph={{ title, description }}
-    canonical={canonical}
+    canonical={openGraph?.url}
+    openGraph={{
+      ...openGraph,
+      title,
+      description,
+      type: "article",
+    }}
+    twitter={{
+      handle: "@nickramki",
+      cardType: "summary_large_image",
+    }}
   />
 );
+
+interface MDXLayoutProps {
+  frontMatter: FrontMatter;
+  children: React.ReactNode;
+}
 
 export const MDXLayout: React.FC<MDXLayoutProps> = ({
   frontMatter,
@@ -69,16 +83,22 @@ export const MDXLayout: React.FC<MDXLayoutProps> = ({
   return <PostContainer frontMatter={frontMatter}>{children}</PostContainer>;
 };
 
-export const PostContainer: React.FC<PostContainerProps> = ({
-  frontMatter,
-  children,
-}) => {
-  const { slug, title, description, canonical, date } = frontMatter;
+export const PostContainer: React.FC<{
+  frontMatter: FrontMatter;
+  children: React.ReactNode;
+}> = ({ frontMatter, children }) => {
+  const { title, openGraph, tags, lastEdited } = frontMatter;
   useHeadingFocusOnRouteChange();
+
+  console.log(frontMatter);
 
   return (
     <>
-      <SEO title={title} description={description} canonical={canonical} />
+      <Seo
+        title={title}
+        description={openGraph.description}
+        openGraph={openGraph}
+      />
       <div className="container max-w-4xl pt-12 mx-auto p-7 selection:bg-rose-700 selection:text-slate-50">
         <Link passHref href="/">
           <div className="flex text-slate-900 hover:text-rose-500 group hover:cursor-pointer w-fit">
@@ -88,11 +108,23 @@ export const PostContainer: React.FC<PostContainerProps> = ({
             Return to all posts
           </div>
         </Link>
-        <p className="mt-3 font-medium text-slate-500 font-main">{date}</p>
-        <h1 className="mb-8 text-5xl font-bold tracking-wide text-slate-900">
-          {title}
-        </h1>
-        <div className="font-main">{children}</div>
+        <article className="w-full">
+          <header className="mb-[40px]">
+            <p className="mt-3 font-medium text-slate-500">
+              {lastEdited?.date && (
+                <div>
+                  <p className="font-medium text-gray-500 text-sm">
+                    {lastEdited?.date}
+                  </p>
+                </div>
+              )}
+            </p>
+            <h1 className="mb-8 text-5xl font-bold tracking-wide text-slate-900">
+              {title}
+            </h1>
+          </header>
+          <main>{children}</main>
+        </article>
         <hr className="border-1 my-9 border-slate-900" />
         <div className="flex flex-col items-center justify-between space-y-7 sm:flex-row sm:space-y-0">
           <Link passHref href="/">

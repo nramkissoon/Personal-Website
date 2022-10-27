@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { darcula } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
-export const MDXComponents: Record<string, ReactNode> = {
+export const MDXComponents = {
   h1: (props: any) => (
     <h1
       className="mb-0 text-6xl font-bold tracking-wide text-rose-600"

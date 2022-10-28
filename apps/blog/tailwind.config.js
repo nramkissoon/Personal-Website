@@ -9,6 +9,9 @@ module.exports = {
       'mono': ['Consolas',...defaultTheme.fontFamily.mono]
     },
     extend: {
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+      },
       colors: {
         'github': "#4078c0",
         'typescript': "#3178c6"

@@ -97,12 +97,12 @@ export const PostContainer: React.FC<{
         description={openGraph.description}
         openGraph={openGraph}
       />
-      <div className="relative mx-auto h-full">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-violet-500 via-rose-500 to-emerald-500" />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden bg-[url('/bg.svg')]" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-radial from-transparent to-[#111]"></div>
+      <div className="relative mx-auto h-full overflow-hidden">
+        <div className=" pointer-events-none absolute inset-0 bg-gradient-to-r from-violet-500 via-rose-500 to-emerald-500" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden bg-[url('/bg.svg')] bg-[length:140px_140px] -left-[20px]" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-radial from-transparent to-[#111]" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#111]/20 via-[#18181800] to-[#111]/20"></div>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r to-[#18181800] via-[#111]/95 from-[#18181800]"></div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r to-[#18181800] via-[#111]/95 from-[#18181800] scale-x-150"></div>
 
         <div className="container relative z-2 max-w-4xl pt-12 mx-auto p-7 selection:bg-emerald-700">
           <Link passHref href="/">
@@ -117,11 +117,9 @@ export const PostContainer: React.FC<{
             <header className="mb-[40px]">
               <p className="mt-3 font-medium text-slate-500">
                 {lastEdited?.date && (
-                  <div>
-                    <p className="font-medium text-gray-500 text-sm">
-                      {lastEdited?.date}
-                    </p>
-                  </div>
+                  <span className="font-medium text-gray-500 text-sm">
+                    {lastEdited?.date}
+                  </span>
                 )}
               </p>
               <h1 className="mb-8 text-5xl font-bold tracking-wide">{title}</h1>

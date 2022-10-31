@@ -7,11 +7,11 @@ export const config = {
 };
 
 const mediumInterFont = fetch(
-  new URL("../../../fonts/Inter-Medium.ttf", import.meta.url)
+  "https://blog.nickramkissoon.com/fonts/Inter-Medium.ttf"
 ).then((res) => res.arrayBuffer());
 
 const boldInterFont = fetch(
-  new URL("../../../fonts/Inter-Bold.ttf", import.meta.url)
+  "https://blog.nickramkissoon.com/fonts/Inter-Bold.ttf"
 ).then((res) => res.arrayBuffer());
 
 export default async function handler(req: NextRequest) {

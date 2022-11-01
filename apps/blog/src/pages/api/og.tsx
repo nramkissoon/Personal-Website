@@ -87,6 +87,7 @@ export default async function handler(req: NextRequest) {
         </div>
       ),
       {
+        status: 200,
         width: 1200,
         height: 630,
         emoji: "twemoji",
@@ -169,6 +170,7 @@ export default async function handler(req: NextRequest) {
       </div>
     ),
     {
+      status: 200,
       width: 1200,
       height: 630,
       emoji: "twemoji",

@@ -1,5 +1,5 @@
 import Image from "next/legacy/image";
-import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
+import { PrismLight as Highlighter } from "react-syntax-highlighter";
 import { darcula } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
 export const MDXComponents = {
@@ -76,7 +76,7 @@ export const MDXComponents = {
             </div>
           )}
         </div>
-        <SyntaxHighlighter
+        <Highlighter
           style={darcula}
           showLineNumbers
           {...props}

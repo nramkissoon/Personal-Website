@@ -4,10 +4,7 @@ import { darcula } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
 export const MDXComponents = {
   h1: (props: any) => (
-    <h1
-      className="mb-0 text-6xl font-bold tracking-wide text-zinc-100"
-      {...props}
-    />
+    <h1 className="mb-0 text-6xl font-bold tracking-wide" {...props} />
   ),
   h2: (props: any) => (
     <h2 className="mb-4 text-4xl font-bold tracking-tight mt-7" {...props} />
@@ -55,7 +52,7 @@ export const MDXComponents = {
         <div className="relative flex space-x-2 top-5">
           <div
             className="px-3 rounded-sm \
-       bg-slate-700 text-slate-200 w-fit font-semibold"
+       bg-slate-700  w-fit font-semibold"
           >
             {language}
           </div>
@@ -102,7 +99,7 @@ export const MDXComponents = {
           quality={80}
           placeholder="empty"
         />
-        <div className="m-auto mt-2 font-medium text-center text-zinc-400">
+        <div className="m-auto mt-2 font-medium text-center text-gray-500">
           {props.alt}
         </div>
       </div>

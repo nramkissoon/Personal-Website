@@ -5,6 +5,7 @@ import { execa } from "execa";
 import path from "path";
 import { z } from "zod";
 import { FrontMatter } from "../components/Post";
+import { NextFetchEvent } from "next/server";
 
 /**
  * Format the last edited timestamp and author from git output
@@ -56,7 +57,7 @@ export const rawFrontMatterSchema = z.object({
   description: z.string().min(110).max(250),
   tags: z.optional(
     z
-      .union([z.literal("AWS"), z.literal("TypeScript")])
+      .union([z.literal("AWS"), z.literal("TypeScript"), z.literal("Next.js")])
       .array()
       .nonempty()
   ),

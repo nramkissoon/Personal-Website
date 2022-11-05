@@ -49,7 +49,7 @@ export default class Document extends NextDocument {
 
           <link rel="canonical" href="https://blog.nickramkissoon.com/"></link> */}
         </Head>
-        <body className="text-zinc-100 font-sans tracking-tight">
+        <body className="text-gray-300 font-sans tracking-tight">
           <Main />
           <NextScript />
         </body>

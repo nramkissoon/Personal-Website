@@ -65,7 +65,7 @@ export default async function handler(req: NextRequest) {
             />
             <div tw="relative z-2 max-w-4xl p-7 flex-col items-center justify-center flex">
               <h2
-                tw="text-7xl tracking-tighter text-zinc-50 w-full text-center"
+                tw="text-7xl tracking-tighter w-full text-center"
                 style={{
                   fontFamily: "Inter-bold",
                 }}
@@ -74,7 +74,7 @@ export default async function handler(req: NextRequest) {
                 <span tw="text-6xl ml-4">✍🏽</span>
               </h2>
               <h3
-                tw="text-center tracking-tight text-zinc-300 text-4xl "
+                tw="text-center tracking-tight text-gray-300 text-4xl "
                 style={{
                   fontFamily: "Inter-med",
                 }}
@@ -150,7 +150,7 @@ export default async function handler(req: NextRequest) {
           />
           <div tw="relative z-2 max-w-4xl p-7 flex-col items-center justify-center flex">
             <h2
-              tw="text-7xl tracking-tighter text-zinc-50 w-full text-center"
+              tw="text-7xl tracking-tighter w-full text-center"
               style={{
                 fontFamily: "Inter-bold",
               }}
@@ -158,7 +158,7 @@ export default async function handler(req: NextRequest) {
               {title} 💻
             </h2>
             <h3
-              tw="text-center tracking-tight text-zinc-300 text-4xl "
+              tw="text-center tracking-tight text-gray-300 text-4xl "
               style={{
                 fontFamily: "Inter-med",
               }}

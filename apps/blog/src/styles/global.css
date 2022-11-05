@@ -11,7 +11,7 @@
     background-image: linear-gradient(
       135deg,
       theme('colors.violet.400') 1.93%,
-      theme('colors.rose.400') 48.09%,
+      theme('colors.cyan.400') 48.09%,
       theme('colors.emerald.400') 79.82%
     );
   }

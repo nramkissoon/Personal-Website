@@ -15,7 +15,7 @@ const ArrowSVG = () => (
     height="24"
     viewBox="0 0 24 24"
     strokeWidth="1.5"
-    className="fill-violet-400 stroke-violet-400"
+    className="group-hover:fill-violet-400 group-hover:stroke-violet-400 fill-gray-300 stroke-gray-300 duration-150"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -28,9 +28,9 @@ const ArrowSVG = () => (
 
 const Post = (props: { frontMatter: FrontMatter; slug: string }) => {
   return (
-    <div className="container mb-20 group duration-100">
+    <div className="container mb-20 group p-4 hover:bg-gray-800/50 rounded-2xl duration-150">
       <Link href={"/posts/" + props.slug} passHref>
-        <h2 className="mb-0 text-3xl font-bold tracking-wide group-hover:gradient-text">
+        <h2 className="mb-0 text-3xl font-bold tracking-wide group-hover:gradient-text duration-150">
           {props.frontMatter.title}
         </h2>
         <p className="mb-4 text-sm font-medium text-gray-400">
@@ -41,7 +41,7 @@ const Post = (props: { frontMatter: FrontMatter; slug: string }) => {
         </p>
         <div className="flex group-hover:text-violet-400">
           Read more
-          <div className="hidden ml-2 group-hover:inline animate-bounce-horizontal">
+          <div className="ml-1 group-hover:animate-bounce-horizontal">
             <ArrowSVG />
           </div>
         </div>

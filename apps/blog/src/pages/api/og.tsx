@@ -150,15 +150,15 @@ export default async function handler(req: NextRequest) {
           />
           <div tw="relative z-2 max-w-4xl p-7 flex-col items-center justify-center flex">
             <h2
-              tw="text-7xl tracking-tighter w-full text-center"
+              tw="text-6xl tracking-tighter w-full text-center"
               style={{
                 fontFamily: "Inter-bold",
               }}
             >
-              {title} 💻
+              {title}
             </h2>
             <h3
-              tw="text-center tracking-tight text-gray-300 text-4xl "
+              tw="text-center tracking-tight text-gray-300 text-3xl"
               style={{
                 fontFamily: "Inter-med",
               }}

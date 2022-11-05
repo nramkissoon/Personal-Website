@@ -12,22 +12,22 @@ const MyApp: AppType = ({ Component, pageProps: { ...pageProps } }) => {
   return (
     <>
       <DefaultSeo
-        title="Developer Blog"
+        title="@nickramki's Blog"
         canonical="https://blog.nickramkissoon.com/"
         description="Developer blog covering software engineering topics, tutorials, personal project updates, and more."
         openGraph={{
           type: "website",
           locale: "en_IE",
           url: "https://blog.nickramkissoon.com/",
-          site_name: "Developer Blog | Nicholas Ramkissoon",
+          site_name: "@nickramki's Blog",
           description:
-            "Developer blog covering software engineering topics, tutorials, personal project updates, and more.",
+            "Blog covering software engineering topics, tutorials, personal project updates, and more.",
           images: [
             {
               url: "https://blog.nickramkissoon.com/api/og",
               width: 1200,
               height: 630,
-              alt: "Developer blog.",
+              alt: "@nickramki's Blog",
               type: "image/png",
             },
           ],

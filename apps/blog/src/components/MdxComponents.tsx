@@ -97,7 +97,6 @@ export const MDXComponents = {
           src={props.src}
           layout="responsive"
           quality={80}
-          placeholder="empty"
         />
         <div className="m-auto mt-2 font-medium text-center text-gray-500">
           {props.alt}

@@ -1,6 +1,6 @@
 import Image from "next/legacy/image";
 import { PrismLight as Highlighter } from "react-syntax-highlighter";
-import { darcula } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { nightOwl as theme } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
 export const MDXComponents = {
   h1: (props: any) => (
@@ -12,18 +12,23 @@ export const MDXComponents = {
   h3: (props: any) => <h3 className="mb-4 text-2xl font-medium" {...props} />,
   a: (props: any) => (
     <a
-      className="font-normal text-violet-400 text-md hover:text-violet-600"
+      className="font-normal text-cyan-400 text-md hover:text-cyan-500"
       target="_blank"
       {...props}
     />
   ),
   p: (props: any) => (
     <p
-      className="mb-5 text-xl font-normal leading-8 tracking-tight"
+      className="py-3 px-2 rounded-xl text-xl font-normal leading-8 tracking-tight"
       {...props}
     />
   ),
-  strong: (props: any) => <strong className="" {...props} />,
+  strong: (props: any) => (
+    <strong
+      className="tracking-wide font-medium rounded-full px-2 py-[2px] bg-gray-700/50"
+      {...props}
+    />
+  ),
   hr: (props: any) => (
     <hr className="border-2 my-9 border-slate-700" {...props} />
   ),
@@ -74,7 +79,7 @@ export const MDXComponents = {
           )}
         </div>
         <Highlighter
-          style={darcula}
+          style={theme}
           showLineNumbers
           {...props}
           language={language}

@@ -1,6 +1,15 @@
 import Image from "next/legacy/image";
 import { PrismLight as Highlighter } from "react-syntax-highlighter";
 import { nightOwl as theme } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import typescript from "react-syntax-highlighter/dist/cjs/languages/prism/typescript";
+import javascript from "react-syntax-highlighter/dist/cjs/languages/prism/javascript";
+import bash from "react-syntax-highlighter/dist/cjs/languages/prism/bash";
+import json from "react-syntax-highlighter/dist/cjs/languages/prism/json";
+
+Highlighter.registerLanguage("typescript", typescript);
+Highlighter.registerLanguage("javascript", javascript);
+Highlighter.registerLanguage("bash", bash);
+Highlighter.registerLanguage("json", json);
 
 export const MDXComponents = {
   h1: (props: any) => (
@@ -81,12 +90,10 @@ export const MDXComponents = {
         <div>
           <Highlighter
             style={theme}
-            showLineNumbers
             {...props}
             language={language}
             // eslint-disable-next-line react/no-children-prop
             children={children}
-            wrapLines
             wrapLongLines
           />
         </div>

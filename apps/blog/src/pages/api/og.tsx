@@ -65,7 +65,7 @@ export default async function handler(req: NextRequest) {
             />
             <div tw="relative z-2 max-w-4xl p-7 flex-col items-center justify-center flex">
               <h2
-                tw="text-7xl tracking-tighter w-full text-center"
+                tw="text-7xl tracking-tighter w-full text-center text-white"
                 style={{
                   fontFamily: "Inter-bold",
                 }}
@@ -148,9 +148,9 @@ export default async function handler(req: NextRequest) {
                 "linear-gradient(to bottom, rgba(24,24,24, 0), rgba(17,17,17, 0.7), rgba(24,24,24, 0))",
             }}
           />
-          <div tw="relative z-2 max-w-4xl p-7 flex-col items-center justify-center flex">
+          <div tw="relative z-2 max-w-4xl p-7 flex-col items-center justify-center flex ">
             <h2
-              tw="text-6xl tracking-tighter w-full text-center"
+              tw="text-6xl tracking-tighter w-full text-center text-white"
               style={{
                 fontFamily: "Inter-bold",
               }}

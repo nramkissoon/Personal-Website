@@ -92,9 +92,16 @@ function Blog(props: StaticProps) {
         <hr className="mb-3 mt-9 border-gray-400" />
         <h2 className="text-2xl font-bold">Posts</h2>
         <div className="mt-6">
-          {props.frontMatters.map((post) => (
-            <Post frontMatter={post} slug={post.slug} key={post.slug} />
-          ))}
+          {props.frontMatters
+            .sort((a, b) => {
+              return (
+                new Date(b.lastEdited?.date).getTime() -
+                new Date(a.lastEdited?.date).getTime()
+              );
+            })
+            .map((post) => (
+              <Post frontMatter={post} slug={post.slug} key={post.slug} />
+            ))}
         </div>
         <hr className=" my-9 border-slate-400" />
 

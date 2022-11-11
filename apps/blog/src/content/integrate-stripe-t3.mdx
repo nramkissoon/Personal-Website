@@ -113,7 +113,7 @@ You define the environment variables you need in the **.env** file in the root o
 
 Add the following environment variables to the schema file.
 
-```js,src/env/schema.mjs
+```javascript,src/env/schema.mjs
 export const serverSchema = z.object({
   DATABASE_URL: z.string().url(),
   NODE_ENV: z.enum(["development", "test", "production"]),
@@ -275,7 +275,7 @@ npm run prisma:push
 
 Next-auth needs to be configured to use the Prisma adapter and the GitHub provider:
 
-```ts,src/pages/api/auth/[...nextauth].ts
+```typescript,src/pages/api/auth/[...nextauth].ts
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
@@ -310,7 +310,7 @@ export default NextAuth(authOptions);
 
 We will also need to create a Stripe client to be used in our API routes:
 
-```ts,src/server/stripe/client.ts
+```typescript,src/server/stripe/client.ts
 import Stripe from "stripe";
 import { env } from "../../env/server.mjs";
 
@@ -323,7 +323,7 @@ export const stripe = new Stripe(env.STRIPE_SK, {
 
 We will start by implementing the **pages/index.tsx** page. This page will be the landing page for our application. It will display a login button that will redirect the user to **/dashboard** upon successful login.
 
-```tsx,src/pages/index.tsx
+```typescript,src/pages/index.tsx
 import { type NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
@@ -439,7 +439,7 @@ Stripe sends [webhook events](https://stripe.com/docs/webhooks/stripe-events) to
 
 Our webhook endpoint will be a Next.js API route that will listen for Stripe events and update our database accordingly. The implementation looks like this:
 
-```ts,src/pages/api/stripe-webhook.ts
+```typescript,src/pages/api/stripe-webhook.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { env } from "../../env/server.mjs";
 import { prisma } from "../../server/db/client";
@@ -554,7 +554,7 @@ export default async function handler(
 
 ### Implement Stripe webhook event handlers
 
-```ts,src/server/stripe/stripe-webhook-handlers.ts
+```typescript,src/server/stripe/stripe-webhook-handlers.ts
 import type { PrismaClient } from "@prisma/client";
 import type Stripe from "stripe";
 
@@ -687,7 +687,7 @@ will need APIs for creating Stripe checkout sessions and billing portal sessions
 
 First, let's add the Stripe client to our Context so it is available in our tRPC routes:
 
-```ts,src/server/trpc/context.ts
+```typescript,src/server/trpc/context.ts
 import { type inferAsyncReturnType } from "@trpc/server";
 import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 import { type Session } from "next-auth";
@@ -739,7 +739,7 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 The Stripe router will contain the API endpoints for creating Stripe checkout sessions and billing portal sessions:
 
-```ts,src/server/trpc/router/stripe.ts
+```typescript,src/server/trpc/router/stripe.ts
 import { env } from "../../../env/server.mjs";
 import { getOrCreateStripeCustomerIdForUser } from "../../stripe/stripe-webhook-handlers";
 import { router, protectedProcedure } from "../trpc";
@@ -824,7 +824,7 @@ export const stripeRouter = router({
 
 ### Adding the Stripe router to the App router
 
-```ts,src/server/trpc/router/_app.ts
+```typescript,src/server/trpc/router/_app.ts
 import { router } from "../trpc";
 import { stripeRouter } from "./stripe";
 
@@ -840,7 +840,7 @@ export type AppRouter = typeof appRouter;
 
 In order to determine whether a user is subscribed or not, we need to add a user router to our app router with a query that fetches the user's subscription status:
 
-```ts,src/server/trpc/router/user.ts
+```typescript,src/server/trpc/router/user.ts
 import { router, protectedProcedure } from "../trpc";
 
 export const userRouter = router({
@@ -871,7 +871,7 @@ export const userRouter = router({
 
 And add it to the app router:
 
-```ts,src/server/trpc/router/_app.ts
+```typescript,src/server/trpc/router/_app.ts
 import { router } from "../trpc";
 import { stripeRouter } from "./stripe";
 import { userRouter } from "./user";
@@ -889,7 +889,7 @@ export type AppRouter = typeof appRouter;
 
 With our tRPC APIs implemented we can now build a dashboard that links to the Stripe Checkout session and the billing portal session:
 
-```tsx,src/pages/dashboard.tsx
+```typescript,src/pages/dashboard.tsx
 import type { GetServerSideProps, NextPage } from "next";
 import { unstable_getServerSession } from "next-auth";
 import { signOut } from "next-auth/react";

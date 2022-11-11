@@ -1,0 +1,1031 @@
+---
+title: "Integrate Stripe Into Your Type-safe T3 Next.js App"
+description: >
+  Stripe allows you to securely accept payments within a web app.
+  By integrating Stripe with the type-safety provided by a Next.js app
+  bootstrapped using create-t3-app, we get a powerful template for building
+  paid apps.
+seoDescription: >
+  Integrate Stripe with a create-t3-app bootstrapped Next.js project
+  to unlock powerful type-safety when handling payments.
+tags: ["TypeScript", "Next.js"]
+---
+
+[GitHub repository](https://github.com/nramkissoon/t3-stripe)
+
+_Note: As with any other tutorial, be aware of the publish date because best-practices may have changed, or breaking changes may have been introduced to relevant packages over time._
+
+If you ever wanted to accept payments for a website or service you built, you have probably heard of Stripe. Stripe give you powerful APIs and SDKs to build complex payment flows without ever having to handle customer payment info.
+Stripe can be integrated into many different frameworks, including Next.js.
+
+We will be integrating Stripe into a [create-t3-app](https://github.com/t3-oss/create-t3-app) bootstrapped Next.js app. Create-t3-app is the quickest way to
+start a new web application with full stack type-safety. It initializes projects with [Prisma](https://www.prisma.io/) and [tRPC](https://trpc.io/) to ensure type-safety starts at the database level and extends into the API request layer.
+
+The developer experience provided by create-t3-app offers one of the best bases
+on which to build serious applications with. Stripe offers the best experience
+for developing payment systems of applications. Combining the two allows you to create paid web apps SaaS subscription-based services quickly and with confidence.
+
+We will be building a Next.js app that offers a paid subscription service to authenticated users. We will be taking advantage of Stripe's Checkout pages and
+customer portal so that we do not need to build payment forms and billing management UI ourselves. However, we will be implementing user authentication and responses to [Stripe webhook events](https://stripe.com/docs/webhooks/stripe-events) for provisioning, updating, and deleting subscriptions. A database is needed to persist user state, so we will also be using a PostgreSQL database provisioned and hosted by [Railway](https://railway.app/).
+
+A GitHub repository with the completed project can be used to follow along [here](https://github.com/nramkissoon/t3-stripe).
+
+## Bootstrapping the app + some useful scripts
+
+First thing to do is create a new Next.js app using create-t3-app.
+
+```bash,terminal
+npx create-t3-app@latest
+```
+
+For the rest of this tutorial we will be using npm, but you can use whichever package manager you prefer.
+
+When prompted, create a name for your new app (ours will be named **t3-stripe**) and be sure to select next-auth, Prisma, tRPC, and TailwindCSS as we will be using all of these in our app.
+
+The final steps in the bootstrapping process will be to initialize a new git repository and install dependencies.
+
+We will need Stripe and [micro](https://www.npmjs.com/package/micro) later for the payments integration so it can be installed now.
+
+```bash,terminal
+npm install stripe micro
+```
+
+Because we need to connect to a database and listen to Stripe webhook events to make our app work, include the following scripts in your package.json file for convenience.
+
+```json,package.json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "prisma:push": "npx prisma db push",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe-webhook --latest",
+  }
+}
+```
+
+## Creating a database with Railway and connecting with Prisma
+
+We will be using Railway to host our database because it is
+convenient and easy to set up. You can alway optionally connect to your own database instance if you prefer.
+
+To create a new database, first sign up for an account at [Railway](https://railway.app/). Once you have signed up, create a new **empty project** in the dashboard. Then, create a new database service by clicking on the **Add Service** button and selecting **PostgreSQL**. You can leave all the default settings as they are.
+
+Once the database service has been created, click on the **Connect** tab to get the connection string. We will need this later to connect Prisma to the database.
+
+![Railway project dashboard with database](/t3-stripe/railway-postgres.png)
+
+## Creating a Stripe account with test products and billing portal
+
+The great thing about [Stripe](https://stripe.com/) is that there is complete separation test data and production data. This means that you can test your integration on test products and payments without worrying about messing up your production data or using real money. When you first create a Stripe account, you will only have access to test data.
+
+Once you have signed up and created an account, you can create a new product by going to the **Products** tab in the dashboard and clicking **Add product**.
+
+We will be creating a subscription service so be sure to select **Standard pricing** and **Recurring** in the pricing details section. You can name the product whatever you want, and set any price. For our example, we will be using a price of $10.00 per month.
+
+![Stripe product dashboard](/t3-stripe/stripe-product.png)
+
+We will be taking advantage of Stripe's Customer portal so users can manage their subscriptions and payment settings. To enable this, go to the [Customer portal settings page](https://dashboard.stripe.com/test/settings/billing/portal) and save changes.
+
+![Stripe portal settings](/t3-stripe/stripe-portal.png)
+
+## Creating a GitHub Oauth app
+
+In order for users to authenticate with our app, we will be using GitHub as our authentication provider. In general, it is good practice to avoid password authentication for web apps and instead use a third-party authentication provider like GitHub, Google, or Facebook.
+
+We will need to create a new GitHub OAuth app for this to work. Go to the [GitHub Developer Settings](https://github.com/settings/developers) and click on **New OAuth App**. Give the app a name and set the **Authorization callback URL** to http://localhost:3000/api/auth and **Homepage URL** to http://localhost:3000.
+
+![GitHub Oauth app](/t3-stripe/github-oauth-app.png)
+
+Once you have created the app, you will be given a **Client ID** and the option to generate a new **Client Secret**. We will need these later to configure our app.
+
+## Project setup
+
+With all the external services set up, we can start implementing the app.
+
+### Environment variables
+
+**create-t3-app** comes with a built-in environment variable system that allows you to easily access environment variables in your code and validate they exist at runtime using **zod**.
+
+You define the environment variables you need in the **.env** file in the root of your project as usual, but you must also define them in the **src/env/schema.mjs**. Zod will check the provided environment variables against the schema and throw an error if any are missing.
+
+Add the following environment variables to the schema file.
+
+```js,src/env/schema.mjs
+export const serverSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  NODE_ENV: z.enum(["development", "test", "production"]),
+  NEXTAUTH_SECRET: z.string(),
+  NEXTAUTH_URL: z.preprocess(
+    // This makes Vercel deployments not fail if you don't set NEXTAUTH_URL
+    // Since NextAuth automatically uses the VERCEL_URL if present.
+    (str) => process.env.VERCEL_URL ?? str,
+    // VERCEL_URL doesnt include `https` so it cant be validated as a URL
+    process.env.VERCEL ? z.string() : z.string().url(),
+  ),
+  GITHUB_CLIENT_ID: z.string(),
+  GITHUB_CLIENT_SECRET: z.string(),
+  STRIPE_PK: z.string(),
+  STRIPE_SK: z.string(),
+  STRIPE_PRICE_ID: z.string(),
+  STRIPE_WEBHOOK_SECRET: z.string(),
+});
+
+```
+
+Add the relevant environment variables to the **.env** file.
+
+```bash,.env
+# When adding additional env variables, the schema in /env/schema.mjs should be updated accordingly
+
+# URL FROM RAILWAY
+DATABASE_URL=postgresql://postgres:xxxxxxxxx@containers-us-west-107.railway.app:6840/railway
+
+# Next Auth
+# You can generate the secret via 'openssl rand -base64 32' on Linux
+# More info: https://next-auth.js.org/configuration/options#secret
+NEXTAUTH_SECRET=super_secret
+NEXTAUTH_URL=http://localhost:3000
+
+# Next Auth GitHub Provider
+GITHUB_CLIENT_ID=xxxxxxxxx
+GITHUB_CLIENT_SECRET=xxxxxxxxx
+
+#Stripe API keys
+STRIPE_PK=pk_test_xxxxxxxxx
+STRIPE_SK=sk_test_xxxxxxxxx
+
+# Stripe Webhook Secret found at https://dashboard.stripe.com/test/webhooks/create?endpoint_location=local
+STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxx
+
+# Stripe Price ID for the product you created
+STRIPE_PRICE_ID=price_xxxxxxxxx
+```
+
+### Prisma schema
+
+Next we will slightly modify the autogenerated Prisma schema to include a new table for storing Stripe Events, as well as add a few fields to the **User** model.
+
+```prisma,prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Further reading:
+  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+  url      = env("DATABASE_URL")
+}
+
+model Example {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Necessary for Next auth
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                       String                    @id @default(cuid())
+  name                     String?
+  email                    String?                   @unique
+  emailVerified            DateTime?
+  image                    String?
+  accounts                 Account[]
+  sessions                 Session[]
+  stripeCustomerId         String? // link to Stripe customer object in Stripe's system
+  stripeSubscriptionId     String? // link to Stripe subscription object for user in Stripe's system
+  stripeSubscriptionStatus StripeSubscriptionStatus? // status of user's subscription to determine access to services
+}
+
+// https://stripe.com/docs/api/subscriptions/object#subscription_object-status
+enum StripeSubscriptionStatus {
+  incomplete
+  incomplete_expired
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model StripeEvent {
+  id               String   @id @unique
+  api_version      String?
+  data             Json
+  request          Json?
+  type             String
+  object           String
+  account          String?
+  created          DateTime
+  livemode         Boolean
+  pending_webhooks Int
+}
+```
+
+Realistically, we would want to store Stripe Customer and Subscription objects in our own database as well in order to avoid rate limits on Stripe's API. However, for the sake of simplicity, we will just store the Stripe Customer and Subscription IDs in our database.
+
+With the Prisma schema in place, we can now generate the Prisma Client and push these schema changes to the database with:
+
+```bash
+npm run prisma:push
+```
+
+### Next Auth config
+
+Next-auth needs to be configured to use the Prisma adapter and the GitHub provider:
+
+```ts,src/pages/api/auth/[...nextauth].ts
+import NextAuth, { type NextAuthOptions } from "next-auth";
+import GitHubProvider from "next-auth/providers/github";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+
+import { env } from "../../../env/server.mjs";
+import { prisma } from "../../../server/db/client";
+
+export const authOptions: NextAuthOptions = {
+  // Include user.id on session
+  callbacks: {
+    session({ session, user }) {
+      if (session.user) {
+        session.user.id = user.id;
+      }
+      return session;
+    },
+  },
+  // Configure one or more authentication providers
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    GitHubProvider({
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+    }),
+  ],
+};
+
+export default NextAuth(authOptions);
+```
+
+### Stripe client
+
+We will also need to create a Stripe client to be used in our API routes:
+
+```ts,src/server/stripe/client.ts
+import Stripe from "stripe";
+import { env } from "../../env/server.mjs";
+
+export const stripe = new Stripe(env.STRIPE_SK, {
+  apiVersion: "2022-08-01",
+});
+```
+
+## Implementing pages/index.tsx
+
+We will start by implementing the **pages/index.tsx** page. This page will be the landing page for our application. It will display a login button that will redirect the user to **/dashboard** upon successful login.
+
+```tsx,src/pages/index.tsx
+import { type NextPage } from "next";
+import Head from "next/head";
+import Link from "next/link";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/router";
+
+const Home: NextPage = () => {
+  return (
+    <>
+      <Head>
+        <title>T3 Stripe</title>
+        <meta name="description" content="Generated by create-t3-app" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
+        <h1 className="text-5xl font-extrabold leading-normal text-gray-700 md:text-[5rem]">
+          T3 <span className="text-[#5433FF]">Stripe</span>
+        </h1>
+        <p className="text-2xl text-gray-700">This app uses:</p>
+        <div className="mt-3 grid gap-3 pt-3 text-center md:grid-cols-2">
+          <TechnologyCard
+            name="create-t3-app"
+            description="Quickest way to start a new web app with full stack typesafety"
+            documentation="https://github.com/t3-oss/create-t3-app"
+          />
+          <TechnologyCard
+            name="Stripe"
+            description="Infrastructure and APIs to accept payments online"
+            documentation="https://stripe.com/docs"
+          />
+        </div>
+        <SignInButton />
+      </main>
+    </>
+  );
+};
+
+export default Home;
+
+type TechnologyCardProps = {
+  name: string;
+  description: string;
+  documentation: string;
+};
+
+const TechnologyCard = ({
+  name,
+  description,
+  documentation,
+}: TechnologyCardProps) => {
+  return (
+    <section className="flex flex-col justify-center rounded-lg border-2 border-gray-500 p-6 shadow-xl duration-500">
+      <h2 className="text-2xl font-semibold text-gray-700">{name}</h2>
+      <p className="text-lg text-gray-600">{description}</p>
+      <Link
+        className="m-auto mt-3 w-fit text-sm text-blue-500 underline decoration-dotted underline-offset-2"
+        href={documentation}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Documentation
+      </Link>
+    </section>
+  );
+};
+
+const GitHubSvg = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 32.58 31.77"
+    height={22}
+    width={22}
+  >
+    <g id="Layer_2" data-name="Layer 2">
+      <g id="Layer_1-2" data-name="Layer 1">
+        <path
+          style={{
+            fill: "#fff",
+            fillRule: "evenodd",
+          }}
+          d="M16.29,0a16.29,16.29,0,0,0-5.15,31.75c.82.15,1.11-.36,1.11-.79s0-1.41,0-2.77C7.7,29.18,6.74,26,6.74,26a4.36,4.36,0,0,0-1.81-2.39c-1.47-1,.12-1,.12-1a3.43,3.43,0,0,1,2.49,1.68,3.48,3.48,0,0,0,4.74,1.36,3.46,3.46,0,0,1,1-2.18c-3.62-.41-7.42-1.81-7.42-8a6.3,6.3,0,0,1,1.67-4.37,5.94,5.94,0,0,1,.16-4.31s1.37-.44,4.48,1.67a15.41,15.41,0,0,1,8.16,0c3.11-2.11,4.47-1.67,4.47-1.67A5.91,5.91,0,0,1,25,11.07a6.3,6.3,0,0,1,1.67,4.37c0,6.26-3.81,7.63-7.44,8a3.85,3.85,0,0,1,1.11,3c0,2.18,0,3.94,0,4.47s.29.94,1.12.78A16.29,16.29,0,0,0,16.29,0Z"
+        />
+      </g>
+    </g>
+  </svg>
+);
+
+const SignInButton = () => {
+  const { status } = useSession();
+  const { push } = useRouter();
+  return (
+    <button
+      className="focus:shadow-outline my-5 inline-flex h-[44px] w-fit cursor-pointer items-center justify-center whitespace-nowrap rounded-md bg-[#333] px-5 py-3 text-sm text-white shadow-sm duration-150 hover:bg-black focus:outline-none disabled:cursor-not-allowed"
+      onClick={() => {
+        if (status === "unauthenticated") {
+          signIn("github", { callbackUrl: "/dashboard" });
+        } else if (status === "authenticated") {
+          push("/dashboard");
+        }
+      }}
+      disabled={status === "loading"}
+    >
+      {GitHubSvg}
+      <span className="ml-2">Sign in with GitHub</span>
+    </button>
+  );
+};
+```
+
+## Setting up a webhook endpoint to listen to Stripe events
+
+Stripe sends [webhook events](https://stripe.com/docs/webhooks/stripe-events) to our app whenever a customer is created, an invoice is paid, a subscription is created, or a subscription is updated or canceled. These events allows application developers to perform database updates, provision services, message users, etc. whenever the event is received. There are dozens of more events that Stripe can send, but these are the relevant ones we will be listening for in this tutorial.
+
+Our webhook endpoint will be a Next.js API route that will listen for Stripe events and update our database accordingly. The implementation looks like this:
+
+```ts,src/pages/api/stripe-webhook.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { env } from "../../env/server.mjs";
+import { prisma } from "../../server/db/client";
+import type Stripe from "stripe";
+import { buffer } from "micro";
+import {
+  handleInvoicePaid,
+  handleSubscriptionCanceled,
+  handleSubscriptionCreatedOrUpdated,
+} from "../../server/stripe/stripe-webhook-handlers";
+import { stripe } from "../../server/stripe/client";
+
+// Stripe requires the raw body to construct the event.
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method === "POST") {
+    const buf = await buffer(req);
+    const sig = req.headers["stripe-signature"];
+
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(buf, sig as string, webhookSecret);
+
+      // Handle the event
+      switch (event.type) {
+        case "invoice.paid":
+          // Used to provision services after the trial has ended.
+          // The status of the invoice will show up as paid. Store the status in your database to reference when a user accesses your service to avoid hitting rate limits.
+          await handleInvoicePaid({
+            event,
+            stripe,
+            prisma,
+          });
+          break;
+        case "customer.subscription.created":
+          // Used to provision services as they are added to a subscription.
+          await handleSubscriptionCreatedOrUpdated({
+            event,
+            prisma,
+          });
+          break;
+        case "customer.subscription.updated":
+          // Used to provision services as they are updated.
+          await handleSubscriptionCreatedOrUpdated({
+            event,
+            prisma,
+          });
+          break;
+        case "invoice.payment_failed":
+          // If the payment fails or the customer does not have a valid payment method,
+          //  an invoice.payment_failed event is sent, the subscription becomes past_due.
+          // Use this webhook to notify your user that their payment has
+          // failed and to retrieve new card details.
+          // Can also have Stripe send an email to the customer notifying them of the failure. See settings: https://dashboard.stripe.com/settings/billing/automatic
+          break;
+        case "customer.subscription.deleted":
+          // handle subscription cancelled automatically based
+          // upon your subscription settings.
+          await handleSubscriptionCanceled({
+            event,
+            prisma,
+          });
+          break;
+        default:
+        // Unexpected event type
+      }
+
+      // record the event in the database
+      await prisma.stripeEvent.create({
+        data: {
+          id: event.id,
+          type: event.type,
+          object: event.object,
+          api_version: event.api_version,
+          account: event.account,
+          created: new Date(event.created * 1000), // convert to milliseconds
+          data: {
+            object: event.data.object,
+            previous_attributes: event.data.previous_attributes,
+          },
+          livemode: event.livemode,
+          pending_webhooks: event.pending_webhooks,
+          request: {
+            id: event.request?.id,
+            idempotency_key: event.request?.idempotency_key,
+          },
+        },
+      });
+
+      res.json({ received: true });
+    } catch (err) {
+      res.status(400).send(`Webhook Error: ${(err as any).message}`);
+      return;
+    }
+  } else {
+    res.setHeader("Allow", "POST");
+    res.status(405).end("Method Not Allowed");
+  }
+}
+```
+
+### Implement Stripe webhook event handlers
+
+```ts,src/server/stripe/stripe-webhook-handlers.ts
+import type { PrismaClient } from "@prisma/client";
+import type Stripe from "stripe";
+
+// retrieves a Stripe customer id for a given user if it exists or creates a new one
+export const getOrCreateStripeCustomerIdForUser = async ({
+  stripe,
+  prisma,
+  userId,
+}: {
+  stripe: Stripe;
+  prisma: PrismaClient;
+  userId: string;
+}) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  if (user.stripeCustomerId) {
+    return user.stripeCustomerId;
+  }
+
+  // create a new customer
+  const customer = await stripe.customers.create({
+    email: user.email ?? undefined,
+    name: user.name ?? undefined,
+    // use metadata to link this Stripe customer to internal user id
+    metadata: {
+      userId,
+    },
+  });
+
+  // update with new customer id
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      stripeCustomerId: customer.id,
+    },
+  });
+
+  if (updatedUser.stripeCustomerId) {
+    return updatedUser.stripeCustomerId;
+  }
+};
+
+export const handleInvoicePaid = async ({
+  event,
+  stripe,
+  prisma,
+}: {
+  event: Stripe.Event;
+  stripe: Stripe;
+  prisma: PrismaClient;
+}) => {
+  const invoice = event.data.object as Stripe.Invoice;
+  const subscriptionId = invoice.subscription;
+  const subscription = await stripe.subscriptions.retrieve(
+    subscriptionId as string
+  );
+  const userId = subscription.metadata.userId;
+
+  // update user with subscription data
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      stripeSubscriptionId: subscription.id,
+      stripeSubscriptionStatus: subscription.status,
+    },
+  });
+};
+
+export const handleSubscriptionCreatedOrUpdated = async ({
+  event,
+  prisma,
+}: {
+  event: Stripe.Event;
+  prisma: PrismaClient;
+}) => {
+  const subscription = event.data.object as Stripe.Subscription;
+  const userId = subscription.metadata.userId;
+
+  // update user with subscription data
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      stripeSubscriptionId: subscription.id,
+      stripeSubscriptionStatus: subscription.status,
+    },
+  });
+};
+
+export const handleSubscriptionCanceled = async ({
+  event,
+  prisma,
+}: {
+  event: Stripe.Event;
+  prisma: PrismaClient;
+}) => {
+  const subscription = event.data.object as Stripe.Subscription;
+  const userId = subscription.metadata.userId;
+
+  // remove subscription data from user
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      stripeSubscriptionId: null,
+      stripeSubscriptionStatus: null,
+    },
+  });
+};
+```
+
+## tRPC Setup
+
+We can use tRPC to create some API endpoints needed for our app, namely we
+will need APIs for creating Stripe checkout sessions and billing portal sessions and querying the user object for its subscription status.
+
+### Adding Stripe client to Context
+
+First, let's add the Stripe client to our Context so it is available in our tRPC routes:
+
+```ts,src/server/trpc/context.ts
+import { type inferAsyncReturnType } from "@trpc/server";
+import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
+import { type Session } from "next-auth";
+
+import { getServerAuthSession } from "../common/get-server-auth-session";
+import { prisma } from "../db/client";
+import { stripe } from "../stripe/client";
+
+type CreateContextOptions = {
+  session: Session | null;
+};
+
+/** Use this helper for:
+ * - testing, so we dont have to mock Next.js' req/res
+ * - trpc's `createSSGHelpers` where we don't have req/res
+ * @see https://beta.create.t3.gg/en/usage/trpc#-servertrpccontextts
+ **/
+export const createContextInner = async (opts: CreateContextOptions) => {
+  return {
+    session: opts.session,
+    prisma,
+    stripe,
+  };
+};
+
+/**
+ * This is the actual context you'll use in your router
+ * @link https://trpc.io/docs/context
+ **/
+export const createContext = async (opts: CreateNextContextOptions) => {
+  const { req, res } = opts;
+
+  // Get the session from the server using the unstable_getServerSession wrapper function
+  const session = await getServerAuthSession({ req, res });
+
+  return {
+    ...(await createContextInner({
+      session,
+    })),
+    req,
+    res,
+  };
+};
+
+export type Context = inferAsyncReturnType<typeof createContext>;
+```
+
+### Stripe router
+
+The Stripe router will contain the API endpoints for creating Stripe checkout sessions and billing portal sessions:
+
+```ts,src/server/trpc/router/stripe.ts
+import { env } from "../../../env/server.mjs";
+import { getOrCreateStripeCustomerIdForUser } from "../../stripe/stripe-webhook-handlers";
+import { router, protectedProcedure } from "../trpc";
+
+export const stripeRouter = router({
+  createCheckoutSession: protectedProcedure.mutation(async ({ ctx }) => {
+    const { stripe, session, prisma, req } = ctx;
+
+    const customerId = await getOrCreateStripeCustomerIdForUser({
+      prisma,
+      stripe,
+      userId: session.user?.id,
+    });
+
+    if (!customerId) {
+      throw new Error("Could not create customer");
+    }
+
+    const baseUrl =
+      env.NODE_ENV === "development"
+        ? `http://${req.headers.host}`
+        : `https://${req.headers.host}`;
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      customer: customerId,
+      client_reference_id: session.user?.id,
+      payment_method_types: ["card"],
+      mode: "subscription",
+      line_items: [
+        {
+          price: env.STRIPE_PRICE_ID,
+          quantity: 1,
+        },
+      ],
+      success_url: `${baseUrl}/dashboard?checkoutSuccess=true`,
+      cancel_url: `${baseUrl}/dashboard?checkoutCanceled=true`,
+      subscription_data: {
+        metadata: {
+          userId: session.user?.id,
+        },
+      },
+    });
+
+    if (!checkoutSession) {
+      throw new Error("Could not create checkout session");
+    }
+
+    return { checkoutUrl: checkoutSession.url };
+  }),
+  createBillingPortalSession: protectedProcedure.mutation(async ({ ctx }) => {
+    const { stripe, session, prisma, req } = ctx;
+
+    const customerId = await getOrCreateStripeCustomerIdForUser({
+      prisma,
+      stripe,
+      userId: session.user?.id,
+    });
+
+    if (!customerId) {
+      throw new Error("Could not create customer");
+    }
+
+    const baseUrl =
+      env.NODE_ENV === "development"
+        ? `http://${req.headers.host}`
+        : `https://${req.headers.host}`;
+
+    const stripeBillingPortalSession =
+      await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${baseUrl}/dashboard`,
+      });
+
+    if (!stripeBillingPortalSession) {
+      throw new Error("Could not create billing portal session");
+    }
+
+    return { billingPortalUrl: stripeBillingPortalSession.url };
+  }),
+});
+```
+
+### Adding the Stripe router to the App router
+
+```ts,src/server/trpc/router/_app.ts
+import { router } from "../trpc";
+import { stripeRouter } from "./stripe";
+
+export const appRouter = router({
+  stripe: stripeRouter,
+});
+
+// export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+### Adding a user router
+
+In order to determine whether a user is subscribed or not, we need to add a user router to our app router with a query that fetches the user's subscription status:
+
+```ts,src/server/trpc/router/user.ts
+import { router, protectedProcedure } from "../trpc";
+
+export const userRouter = router({
+  subscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
+    const { session, prisma } = ctx;
+
+    if (!session.user?.id) {
+      throw new Error("Not authenticated");
+    }
+
+    const data = await prisma.user.findUnique({
+      where: {
+        id: session.user?.id,
+      },
+      select: {
+        stripeSubscriptionStatus: true,
+      },
+    });
+
+    if (!data) {
+      throw new Error("Could not find user");
+    }
+
+    return data.stripeSubscriptionStatus;
+  }),
+});
+```
+
+And add it to the app router:
+
+```ts,src/server/trpc/router/_app.ts
+import { router } from "../trpc";
+import { stripeRouter } from "./stripe";
+import { userRouter } from "./user";
+
+export const appRouter = router({
+  stripe: stripeRouter,
+  user: userRouter,
+});
+
+// export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+## Building a dashboard that links to Stripe Checkout sessions
+
+With our tRPC APIs implemented we can now build a dashboard that links to the Stripe Checkout session and the billing portal session:
+
+```tsx,src/pages/dashboard.tsx
+import type { GetServerSideProps, NextPage } from "next";
+import { unstable_getServerSession } from "next-auth";
+import { signOut } from "next-auth/react";
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { trpc } from "../utils/trpc";
+import { authOptions } from "./api/auth/[...nextauth]";
+
+const SignoutButton = () => {
+  return (
+    <button
+      className="w-fit cursor-pointer rounded-md bg-red-500 px-5 py-2 text-lg font-semibold text-white shadow-sm duration-150 hover:bg-red-600"
+      onClick={() => {
+        signOut({ callbackUrl: "/" });
+      }}
+    >
+      Sign out
+    </button>
+  );
+};
+
+const UpgradeButton = () => {
+  const { mutateAsync: createCheckoutSession } =
+    trpc.stripe.createCheckoutSession.useMutation();
+  const { push } = useRouter();
+  return (
+    <button
+      className="w-fit cursor-pointer rounded-md bg-blue-500 px-5 py-2 text-lg font-semibold text-white shadow-sm duration-150 hover:bg-blue-600"
+      onClick={async () => {
+        const { checkoutUrl } = await createCheckoutSession();
+        if (checkoutUrl) {
+          push(checkoutUrl);
+        }
+      }}
+    >
+      Upgrade account
+    </button>
+  );
+};
+
+const ManageBillingButton = () => {
+  const { mutateAsync: createBillingPortalSession } =
+    trpc.stripe.createBillingPortalSession.useMutation();
+  const { push } = useRouter();
+  return (
+    <button
+      className="w-fit cursor-pointer rounded-md bg-blue-500 px-5 py-2 text-lg font-semibold text-white shadow-sm duration-150 hover:bg-blue-600"
+      onClick={async () => {
+        const { billingPortalUrl } = await createBillingPortalSession();
+        if (billingPortalUrl) {
+          push(billingPortalUrl);
+        }
+      }}
+    >
+      Manage subscription and billing
+    </button>
+  );
+};
+
+const Dashboard: NextPage = () => {
+  const { data: subscriptionStatus, isLoading } =
+    trpc.user.subscriptionStatus.useQuery();
+
+  return (
+    <>
+      <Head>
+        <title>T3 Stripe</title>
+        <meta name="description" content="Generated by create-t3-app" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <main className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
+        <h1 className="text-5xl font-extrabold leading-normal text-gray-700">
+          T3 <span className="text-[#5433FF]">Stripe</span> Dashboard
+        </h1>
+        <p className="text-2xl text-gray-700">Actions:</p>
+        <div className="mt-3 flex flex-col items-center justify-center gap-4">
+          <SignoutButton />
+          {!isLoading && subscriptionStatus !== null && (
+            <>
+              <p className="text-xl text-gray-700">
+                Your subscription is {subscriptionStatus}.
+              </p>
+              <ManageBillingButton />
+            </>
+          )}
+          {!isLoading && subscriptionStatus === null && (
+            <>
+              <p className="text-xl text-gray-700">You are not subscribed!!!</p>
+              <UpgradeButton />
+            </>
+          )}
+        </div>
+      </main>
+    </>
+  );
+};
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await unstable_getServerSession(
+    context.req,
+    context.res,
+    authOptions
+  );
+
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      session,
+    },
+  };
+};
+
+export default Dashboard;
+```
+
+The dashboard checks whether or not the user has a subscription and displays the appropriate buttons for either case.
+
+The **Upgrade button** creates a Stripe Checkout session and redirects the user to the Stripe Checkout page, and the **Manage billing button** creates a Stripe Billing Portal session and redirects the user to the Stripe Billing Portal page.
+
+## Testing the app
+
+To test the app, it is important that we are listening to Stripe events.
+If you have not already done so, install the [Stripe CLI](https://stripe.com/docs/stripe-cli) and run **stripe login** in a terminal.
+
+Then run **npm run stripe:listen** to listen to Stripe events.
+
+Now, start the app with **npm run dev** in another terminal and go to [http://localhost:3000](http://localhost:3000/).
+
+<Video src="/t3-stripe/demo.mp4" type="video/mp4" muted autoPlay loop />
+
+That's it! This app can be deployed anywhere a Next.js app can be deployed to.

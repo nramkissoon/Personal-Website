@@ -19,7 +19,7 @@ export const MDXComponents = {
   ),
   p: (props: any) => (
     <p
-      className="py-3 px-2 rounded-xl text-xl font-normal leading-8 tracking-tight"
+      className="py-2 rounded-xl text-xl font-normal leading-8 tracking-tight"
       {...props}
     />
   ),
@@ -53,7 +53,7 @@ export const MDXComponents = {
     // remove final \n
     const children = (props.children as string).slice(0, -1);
     return (
-      <div className="-mt-4">
+      <div className="-mt-4 mb-5">
         <div className="relative flex space-x-2 top-5">
           <div
             className="px-3 rounded-sm \
@@ -78,19 +78,26 @@ export const MDXComponents = {
             </div>
           )}
         </div>
-        <Highlighter
-          style={theme}
-          showLineNumbers
-          {...props}
-          language={language}
-          // eslint-disable-next-line react/no-children-prop
-          children={children}
-        />
+        <div>
+          <Highlighter
+            style={theme}
+            showLineNumbers
+            {...props}
+            language={language}
+            // eslint-disable-next-line react/no-children-prop
+            children={children}
+            wrapLines
+            wrapLongLines
+          />
+        </div>
       </div>
     );
   },
   img: (props: any) => {
-    return <img {...props} />;
+    return <img className="rounded-lg" {...props} />;
+  },
+  Video: (props: any) => {
+    return <video className="rounded-lg" {...props} />;
   },
   HostedImg: (props: any) => {
     return (

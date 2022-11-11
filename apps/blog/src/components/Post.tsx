@@ -104,7 +104,7 @@ export const PostContainer: React.FC<{
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#111]/20 via-[#18181800] to-[#111]/20"></div>
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r to-[#18181800] via-[#111]/95 from-[#18181800] scale-x-150"></div>
 
-        <div className="container relative z-2 max-w-4xl pt-12 mx-auto p-7 selection:bg-emerald-700">
+        <div className="container relative z-2 max-w-4xl pt-12 mx-auto p-7">
           <Link passHref href="/">
             <div className="flex hover:text-rose-500 group hover:cursor-pointer w-fit duration-150">
               Return to all posts

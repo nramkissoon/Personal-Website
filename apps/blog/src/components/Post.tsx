@@ -119,7 +119,9 @@ export const PostContainer: React.FC<{
                   </span>
                 )}
               </p>
-              <h1 className="mb-8 text-5xl font-bold tracking-wide">{title}</h1>
+              <h1 className="mb-8 lg:text-5xl text-3xl font-bold tracking-wide">
+                {title}
+              </h1>
             </header>
             <main>{children}</main>
           </article>

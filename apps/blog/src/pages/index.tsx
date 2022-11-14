@@ -28,7 +28,7 @@ const ArrowSVG = () => (
 
 const Post = (props: { frontMatter: FrontMatter; slug: string }) => {
   return (
-    <div className="container mb-16 group p-4 py-6 hover:bg-gray-800/50 rounded-2xl duration-150">
+    <div className="container mb-10 group p-4 py-6 hover:bg-gray-800/50 rounded-2xl duration-150">
       <Link href={"/posts/" + props.slug} passHref>
         <h2 className="mb-0 text-3xl font-bold tracking-wide group-hover:gradient-text duration-150">
           {props.frontMatter.title}

@@ -2,11 +2,9 @@ import { DefaultSeo } from "next-seo";
 import { AppType } from "next/dist/shared/lib/utils";
 import "../styles/global.css";
 
-import "@fontsource/inter/200.css";
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/inter/800.css";
+import { Inter } from "@next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 const MyApp: AppType = ({ Component, pageProps: { ...pageProps } }) => {
   return (
@@ -37,6 +35,11 @@ const MyApp: AppType = ({ Component, pageProps: { ...pageProps } }) => {
           cardType: "summary_large_image",
         }}
       />
+      <style jsx global>{`
+        html {
+          font-family: ${inter.style.fontFamily};
+        }
+      `}</style>
       <Component {...pageProps} />
     </>
   );

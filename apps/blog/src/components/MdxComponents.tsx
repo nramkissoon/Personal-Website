@@ -13,10 +13,16 @@ Highlighter.registerLanguage("json", json);
 
 export const MDXComponents = {
   h1: (props: any) => (
-    <h1 className="mb-0 text-6xl font-bold tracking-wide" {...props} />
+    <h1
+      className="mb-0 lg:text-6xl font-bold tracking-wide text-3xl"
+      {...props}
+    />
   ),
   h2: (props: any) => (
-    <h2 className="mb-4 text-4xl font-bold tracking-tight mt-7" {...props} />
+    <h2
+      className="mb-4 text-2xl lg:text-4xl font-bold tracking-tight mt-7"
+      {...props}
+    />
   ),
   h3: (props: any) => <h3 className="mb-4 text-2xl font-medium" {...props} />,
   a: (props: any) => (
@@ -28,7 +34,7 @@ export const MDXComponents = {
   ),
   p: (props: any) => (
     <p
-      className="py-2 rounded-xl text-xl font-normal leading-8 tracking-tight"
+      className="py-2 rounded-xl font-normal leading-8 tracking-tight "
       {...props}
     />
   ),

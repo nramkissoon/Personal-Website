@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useInView } from "framer-motion";
 
-import { useSectionStore } from "./SectionProvider";
+// import { useSectionStore } from "./SectionProvider";
 import { remToPx } from "./../utils/remToPx";
 
 function Anchor({ id, children }: any) {
@@ -27,18 +27,18 @@ export function Heading({
 }: any) {
   const Component = `h${level}`;
   const ref = useRef();
-  const registerHeading = useSectionStore((s) => s.registerHeading) as any;
+  // const registerHeading = useSectionStore((s) => s.registerHeading) as any;
 
   const inView = useInView(ref as any, {
     margin: `${remToPx(-3.5)}px 0px 0px 0px`,
     amount: "all",
   });
 
-  useEffect(() => {
-    if (level === 2) {
-      registerHeading({ id, ref, offsetRem: tag || label ? 8 : 6 });
-    }
-  });
+  // useEffect(() => {
+  //   if (level === 2) {
+  //     registerHeading({ id, ref, offsetRem: tag || label ? 8 : 6 });
+  //   }
+  // });
 
   return (
     <>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
 import { Toc } from "./Toc";
+import { Section } from "./SectionProvider";
 
 export interface SEOProps
   extends Pick<NextSeoProps, "title" | "description" | "openGraph"> {}
@@ -75,19 +76,26 @@ export const Seo = ({ title, description, openGraph }: SEOProps) => (
 interface MDXLayoutProps {
   frontMatter: FrontMatter;
   children: React.ReactNode;
+  sections: Section[];
 }
 
 export const MDXLayout: React.FC<MDXLayoutProps> = ({
   frontMatter,
   children,
+  sections,
 }) => {
-  return <PostContainer frontMatter={frontMatter}>{children}</PostContainer>;
+  return (
+    <PostContainer frontMatter={frontMatter} sections={sections}>
+      {children}
+    </PostContainer>
+  );
 };
 
 export const PostContainer: React.FC<{
   frontMatter: FrontMatter;
   children: React.ReactNode;
-}> = ({ frontMatter, children }) => {
+  sections: Section[];
+}> = ({ frontMatter, children, sections }) => {
   const { title, openGraph, tags, lastEdited, slug } = frontMatter;
   useHeadingFocusOnRouteChange();
 
@@ -128,7 +136,7 @@ export const PostContainer: React.FC<{
                 </h1>
               </header>
               <span>Table of contents</span>
-              <Toc slug={slug} />
+              <Toc slug={slug} sections={sections} />
               <main>{children}</main>
             </article>
             <hr className="border-1 my-9 border-zinc-500" />

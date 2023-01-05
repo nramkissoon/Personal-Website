@@ -1,12 +1,12 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useState,
-  ReactNode,
-} from "react";
-import { createStore, useStore, StoreApi } from "zustand";
+// import {
+//   createContext,
+//   useContext,
+//   useEffect,
+//   useLayoutEffect,
+//   useState,
+//   ReactNode,
+// } from "react";
+// import { createStore, useStore, StoreApi } from "zustand";
 // import { remToPx } from "./../utils/remToPx";
 
 export type Section = {
@@ -16,40 +16,40 @@ export type Section = {
   offsetRem?: number;
 };
 
-type SectionStore = {
-  sections: Section[];
-  visibleSections: string[];
-  setVisibleSections: (visibleSections: string[]) => void;
-  registerHeading: (args: { id: string; ref: any; offsetRem: number }) => void;
-};
+// type SectionStore = {
+//   sections: Section[];
+//   visibleSections: string[];
+//   setVisibleSections: (visibleSections: string[]) => void;
+//   registerHeading: (args: { id: string; ref: any; offsetRem: number }) => void;
+// };
 
-function createSectionStore(sections: Section[]) {
-  return createStore<SectionStore>((set) => ({
-    sections,
-    visibleSections: [],
-    setVisibleSections: (visibleSections) =>
-      set((state) =>
-        state.visibleSections.join() === visibleSections.join()
-          ? {}
-          : { visibleSections }
-      ),
-    registerHeading: ({ id, ref, offsetRem }) =>
-      set((state) => {
-        return {
-          sections: state.sections.map((section) => {
-            if (section.id === id) {
-              return {
-                ...section,
-                headingRef: ref,
-                offsetRem,
-              };
-            }
-            return section;
-          }),
-        };
-      }),
-  }));
-}
+// function createSectionStore(sections: Section[]) {
+//   return createStore<SectionStore>((set) => ({
+//     sections,
+//     visibleSections: [],
+//     setVisibleSections: (visibleSections) =>
+//       set((state) =>
+//         state.visibleSections.join() === visibleSections.join()
+//           ? {}
+//           : { visibleSections }
+//       ),
+//     registerHeading: ({ id, ref, offsetRem }) =>
+//       set((state) => {
+//         return {
+//           sections: state.sections.map((section) => {
+//             if (section.id === id) {
+//               return {
+//                 ...section,
+//                 headingRef: ref,
+//                 offsetRem,
+//               };
+//             }
+//             return section;
+//           }),
+//         };
+//       }),
+//   }));
+// }
 
 // function useVisibleSections(sectionStore: StoreApi<SectionStore>) {
 //   const setVisibleSections = useStore(
@@ -107,34 +107,34 @@ function createSectionStore(sections: Section[]) {
 //   }, [setVisibleSections, sections]);
 // }
 
-const SectionStoreContext = createContext<StoreApi<SectionStore>>({} as any);
+// const SectionStoreContext = createContext<StoreApi<SectionStore>>({} as any);
 
-const useIsomorphicLayoutEffect =
-  typeof window === "undefined" ? useEffect : useLayoutEffect;
+// const useIsomorphicLayoutEffect =
+//   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-export function SectionProvider({
-  sections,
-  children,
-}: {
-  sections: Section[];
-  children: ReactNode;
-}) {
-  const [sectionStore] = useState(() => createSectionStore(sections));
+// export function SectionProvider({
+//   sections,
+//   children,
+// }: {
+//   sections: Section[];
+//   children: ReactNode;
+// }) {
+//   const [sectionStore] = useState(() => createSectionStore(sections));
 
-  // useVisibleSections(sectionStore);
+//   // useVisibleSections(sectionStore);
 
-  useIsomorphicLayoutEffect(() => {
-    sectionStore.setState({ sections });
-  }, [sectionStore, sections]);
+//   useIsomorphicLayoutEffect(() => {
+//     sectionStore.setState({ sections });
+//   }, [sectionStore, sections]);
 
-  return (
-    <SectionStoreContext.Provider value={sectionStore}>
-      {children}
-    </SectionStoreContext.Provider>
-  );
-}
+//   return (
+//     <SectionStoreContext.Provider value={sectionStore}>
+//       {children}
+//     </SectionStoreContext.Provider>
+//   );
+// }
 
-export function useSectionStore(selector: (state: SectionStore) => any) {
-  const store = useContext(SectionStoreContext);
-  return useStore(store, selector);
-}
+// export function useSectionStore(selector: (state: SectionStore) => any) {
+//   const store = useContext(SectionStoreContext);
+//   return useStore(store, selector);
+// }

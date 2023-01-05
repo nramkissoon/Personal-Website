@@ -10,7 +10,6 @@ import { toString } from "mdast-util-to-string";
 import { MDXComponents } from "../../components/MdxComponents";
 import { FrontMatter, MDXLayout } from "../../components/Post";
 import { processRawFrontMatter } from "../../utils/mdx";
-import { SectionProvider } from "../../components/SectionProvider";
 
 const Post = ({
   frontMatter,
@@ -18,11 +17,9 @@ const Post = ({
   sections,
 }: InferGetStaticPropsType<typeof getStaticProps>) => {
   return (
-    <SectionProvider sections={sections}>
-      <MDXLayout frontMatter={frontMatter}>
-        <MDXRemote {...mdxSource} components={MDXComponents} />
-      </MDXLayout>
-    </SectionProvider>
+    <MDXLayout frontMatter={frontMatter} sections={sections}>
+      <MDXRemote {...mdxSource} components={MDXComponents} />
+    </MDXLayout>
   );
 };
 

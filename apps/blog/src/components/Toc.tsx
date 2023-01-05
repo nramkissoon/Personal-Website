@@ -1,4 +1,4 @@
-import { Section, useSectionStore } from "./SectionProvider";
+import { Section } from "./SectionProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import Link from "next/link";
@@ -20,14 +20,12 @@ function NavLink({ href, active, isAnchorLink = false, children }: any) {
   );
 }
 
-export const Toc = (props: { slug: string }) => {
-  const sections = useSectionStore((s) => s.sections) as Section[];
-
+export const Toc = (props: { slug: string; sections: Section[] }) => {
   return (
     <ul role="list" className="border-l border-transparent">
       <motion.li layout="position" className="relative">
         <AnimatePresence mode="popLayout" initial={false}>
-          {sections.length > 0 && (
+          {props.sections.length > 0 && (
             <motion.ul
               role="list"
               initial={{ opacity: 0 }}
@@ -40,7 +38,7 @@ export const Toc = (props: { slug: string }) => {
                 transition: { duration: 0.15 },
               }}
             >
-              {sections.map((section: any) => (
+              {props.sections.map((section: any) => (
                 <li key={section.id}>
                   <NavLink
                     href={`/posts/${props.slug}#${section.id}`}

@@ -1,7 +1,7 @@
 import fs from "fs";
 import matter from "gray-matter";
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
-import { MDXRemote, MDXRemoteSerializeResult } from "next-mdx-remote";
+import { GetStaticPaths, InferGetStaticPropsType } from "next";
+import { MDXRemote } from "next-mdx-remote";
 import { serialize } from "next-mdx-remote/serialize";
 import { visit } from "unist-util-visit";
 import { slugifyWithCounter } from "@sindresorhus/slugify";
@@ -10,6 +10,7 @@ import { toString } from "mdast-util-to-string";
 import { MDXComponents } from "../../components/MdxComponents";
 import { FrontMatter, MDXLayout } from "../../components/Post";
 import { processRawFrontMatter } from "../../utils/mdx";
+import { SectionProvider } from "../../components/SectionProvider";
 
 const Post = ({
   frontMatter,
@@ -17,9 +18,11 @@ const Post = ({
   sections,
 }: InferGetStaticPropsType<typeof getStaticProps>) => {
   return (
-    <MDXLayout frontMatter={frontMatter}>
-      <MDXRemote {...mdxSource} components={MDXComponents} />
-    </MDXLayout>
+    <SectionProvider sections={sections}>
+      <MDXLayout frontMatter={frontMatter}>
+        <MDXRemote {...mdxSource} components={MDXComponents} />
+      </MDXLayout>
+    </SectionProvider>
   );
 };
 

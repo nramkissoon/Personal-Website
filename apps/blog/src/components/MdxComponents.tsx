@@ -5,6 +5,8 @@ import typescript from "react-syntax-highlighter/dist/cjs/languages/prism/typesc
 import javascript from "react-syntax-highlighter/dist/cjs/languages/prism/javascript";
 import bash from "react-syntax-highlighter/dist/cjs/languages/prism/bash";
 import json from "react-syntax-highlighter/dist/cjs/languages/prism/json";
+import { HTMLProps } from "react";
+import { Heading } from "./Heading";
 
 Highlighter.registerLanguage("typescript", typescript);
 Highlighter.registerLanguage("javascript", javascript);
@@ -18,10 +20,11 @@ export const MDXComponents = {
       {...props}
     />
   ),
-  h2: (props: any) => (
-    <h2
-      className="mb-4 text-2xl lg:text-4xl font-bold tracking-tight mt-7"
+  h2: (props: HTMLProps<HTMLHeadingElement>) => (
+    <Heading
+      level={2}
       {...props}
+      className={"mb-4 text-2xl lg:text-4xl font-bold tracking-tight mt-7"}
     />
   ),
   h3: (props: any) => <h3 className="mb-4 text-2xl font-medium" {...props} />,

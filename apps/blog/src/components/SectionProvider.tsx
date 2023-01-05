@@ -6,9 +6,7 @@ import {
   useState,
   ReactNode,
 } from "react";
-import type { StoreApi } from "zustand";
-import { createStore, useStore } from "zustand";
-
+import { createStore, useStore, StoreApi } from "zustand";
 import { remToPx } from "./../utils/remToPx";
 
 export type Section = {

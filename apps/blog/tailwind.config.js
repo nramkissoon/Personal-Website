@@ -5,7 +5,6 @@ module.exports = {
   content: ["./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
     fontFamily: {
-      sans: ["Inter"],
       'main': ['Roboto', ...defaultTheme.fontFamily.sans],
       'mono': ['Consolas',...defaultTheme.fontFamily.mono]
     },

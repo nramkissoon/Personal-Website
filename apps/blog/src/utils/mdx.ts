@@ -98,7 +98,7 @@ export const processRawFrontMatter = async ({
       url: "https://blog.nickramkissoon.com/posts/" + slug,
       images: [
         {
-          url: `https://blog.nickramkissoon.com/api/og?title=${title}&description=${description}`,
+          url: `https://blog.nickramkissoon.com/api/og?title=${title}&description=${seoDescription}`,
           width: 1200,
           height: 630,
           alt: "Developer blog.",

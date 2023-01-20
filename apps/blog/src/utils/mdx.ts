@@ -54,10 +54,15 @@ async function getLastEdited(filePath: string) {
 export const rawFrontMatterSchema = z.object({
   title: z.string().min(45).max(70),
   seoDescription: z.string().min(110).max(160),
-  description: z.string().min(110).max(250),
+  description: z.string().min(110).max(350),
   tags: z.optional(
     z
-      .union([z.literal("AWS"), z.literal("TypeScript"), z.literal("Next.js")])
+      .union([
+        z.literal("AWS"),
+        z.literal("TypeScript"),
+        z.literal("Next.js"),
+        z.literal("create-t3-app"),
+      ])
       .array()
       .nonempty()
   ),

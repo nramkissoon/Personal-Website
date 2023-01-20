@@ -7,11 +7,13 @@ import bash from "react-syntax-highlighter/dist/cjs/languages/prism/bash";
 import json from "react-syntax-highlighter/dist/cjs/languages/prism/json";
 import { HTMLProps } from "react";
 import { Heading } from "./Heading";
+import css from "react-syntax-highlighter/dist/cjs/languages/prism/css";
 
 Highlighter.registerLanguage("typescript", typescript);
 Highlighter.registerLanguage("javascript", javascript);
 Highlighter.registerLanguage("bash", bash);
 Highlighter.registerLanguage("json", json);
+Highlighter.registerLanguage("css", css);
 
 export const MDXComponents = {
   h1: (props: any) => (
@@ -57,7 +59,7 @@ export const MDXComponents = {
     <ol className="list-decimal list-inside marker:text-slate-100" {...props} />
   ),
   li: (props: any) => (
-    <li className="text-xl leading-7 text-slate-100" {...props}>
+    <li className="text-md leading-7 text-slate-100" {...props}>
       <span className="text-slate-100">{props.children}</span>
     </li>
   ),

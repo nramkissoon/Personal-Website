@@ -13,7 +13,7 @@
   "dependencies": {
     "@next/font": "^13.0.3",
     "@sindresorhus/slugify": "^2.1.1",
-    "@vercel/og": "^0.0.20",
+    "@vercel/og": "0.0.20",
     "clsx": "^1.2.1",
     "date-fns": "^2.29.3",
     "execa": "^6.1.0",

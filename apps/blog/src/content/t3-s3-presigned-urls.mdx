@@ -1,0 +1,742 @@
+---
+title: "Integrate S3 Presigned URL Operations Into Your create-t3-app Project"
+description: >
+  Many web applications allow users to upload and retrieve objects such as images. AWS S3 is the standard when it comes to cloud object storage, but allowing your users to upload to your S3 bucket can be tricky to get right. This tutorial will walk through integrating S3 presigned URLs into your create-t3-app.
+seoDescription: >
+  Integrate S3 presigned URLs into your create-t3-app project to allow user file uploads directly to your S3 bucket.
+tags: ["AWS", "create-t3-app"]
+---
+
+[GitHub repository](https://github.com/nramkissoon/t3-s3)
+
+_Note: As with any other tutorial, be aware of the publish date and package versions listed in the repository's [package.json](https://github.com/nramkissoon/t3-s3/blob/main/package.json) because best-practices may have changed, or breaking changes may have been introduced to relevant packages over time._
+
+Many web applications allow users to upload and retrieve objects such as images and videos from the application's servers. In fact, most apps you use probably
+implement this function for something as simple as updating a profile picture.
+
+AWS S3 is the standard for cloud-based object storage, yet, allowing a user to upload a file to your S3 bucket can be tricky to get right. Naively, you can have your users upload to an API endpoint on your backend and then forward the object to S3, but if you host your backend on something like Vercel, data transfer costs will quickly become unsustainable.
+
+The best way to get user objects to S3 is directly via presigned URLs. In short, presigned URLs are a secure way to grant access for a specific operation on a specific S3 object using a URL that can be shared. Read more about presigned URLs in the [S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html).
+
+We will be building a create-t3-app project that allows uploads to a private S3 bucket. Specifically we will be:
+
+- creating and configuring an S3 bucket to upload to (an AWS account and credentials are required)
+- creating tRPC endpoints in our T3 app that access the S3 API to create presigned URLs to send to the client
+- building dropzone components with [react-dropzone](https://react-dropzone.js.
+  org/) to support regular uploads and multipart uploads
+
+A GitHub repository with the completed project can be used to follow along [here](https://github.com/nramkissoon/t3-s3).
+
+Here is a demo video of the final application:
+
+<Video
+  src="https://cdn.uploadjoy.com/nickramkissoon-blog/nickramkissoon-blog/t3-s3/demo.mp4"
+  type="video/mp4"
+  muted
+  autoPlay
+  loop
+/>
+
+## Creating the initial app + some useful dependencies
+
+First thing to do is create a create-t3-app project.
+
+```bash,terminal
+npm create t3-app@latest
+```
+
+For the rest of this tutorial we will be using npm, but you can use whichever package manager you prefer.
+
+When prompted, create a name for your new app (ours will be named **t3-s3**) and be sure to select tRPC, and TailwindCSS as we will be using these in our app.
+
+The final steps in the creation process will be to initialize a new git repository and install dependencies.
+
+We will also need a couple of packages from the AWS SDK, react-dropzone, and axios, so let's install those now.
+
+```bash,terminal
+npm i @aws-sdk/client-s3 @aws-sdk/s3-request-presigner react-dropzone axios
+```
+
+## Creating an S3 bucket
+
+Log into your AWS account and navigate to the S3 dashboard. From here, create a new bucket with a unique name. The other settings can be left as default as they block all public access to the bucket already.
+
+### Configuring CORS
+
+In order for presigned URLs to work, we need to configure CORS on our bucket. Navigate to the bucket's **permissions** tab and scroll down to the CORS configuration section. Add the following CORS configuration:
+
+```json
+[
+  {
+    "AllowedHeaders": ["Authorization", "Content-Length", "Content-Type"],
+    "AllowedMethods": ["GET", "PUT", "POST"],
+    "AllowedOrigins": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+
+Once you have saved the CORS configuration, the bucket should be ready to go.
+
+## Configuring environment variables
+
+Make sure you have your AWS credentials handy for this step. We will be using the AWS SDK to create presigned URLs, so we need to add our AWS credentials to our environment variables in our T3 app. The name of S3 bucket we created earlier and the AWS region it is in will also needed to be added to out environment variables.
+
+In **src/env/schema.mjs**, declare the following environment variables:
+
+```javascript,src/env/schema.mjs
+// @ts-check
+import { z } from "zod";
+
+/**
+ * Specify your server-side environment variables schema here.
+ * This way you can ensure the app isn't built with invalid env vars.
+ */
+export const serverSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]),
+  AWS_ACCESS_KEY_ID: z.string(),
+  AWS_SECRET_ACCESS_KEY: z.string(),
+  BUCKET_NAME: z.string(),
+  REGION: z.string(),
+});
+
+/**
+ * You can't destruct `process.env` as a regular object in the Next.js
+ * middleware, so you have to do it manually here.
+ * @type {{ [k in keyof z.infer<typeof serverSchema>]: z.infer<typeof serverSchema>[k] | undefined }}
+ */
+export const serverEnv = {
+  NODE_ENV: process.env.NODE_ENV,
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+  BUCKET_NAME: process.env.BUCKET_NAME,
+  REGION: process.env.REGION,
+};
+```
+
+Then add the following to the top-level **.env** file:
+
+```bash
+AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
+BUCKET_NAME=YOUR_BUCKET_NAME
+REGION=YOUR_BUCKET_REGION
+```
+
+## Creating tRPC endpoints
+
+Let's create the tRPC endpoints that will be used to access the S3 API and create presigned URLs.
+
+First make a new file **src/server/aws/s3.ts** and export an S3 client from it:
+
+```typescript,src/server/aws/s3.ts
+import { S3 } from "@aws-sdk/client-s3";
+import { env } from "../../env/server.mjs";
+
+export const s3 = new S3({
+  region: env.REGION,
+  credentials: {
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+```
+
+In **src/server/api/trpc.ts**, add the S3 client to the context so it can be accessed within our tRPC procedures:
+
+```typescript,src/server/api/trpc.ts
+import { s3 } from "../aws/s3";
+// ...
+const createInnerTRPCContext = (_opts: CreateContextOptions) => {
+  return { s3 };
+};
+// ...
+```
+
+Then create a new router in **src/server/api/routers/s3.ts** to contain the tRPC procedures we will be implementing:
+
+```typescript,src/server/api/routers/s3.ts
+import { z } from "zod";
+
+import { createTRPCRouter, publicProcedure } from "../trpc";
+
+export const s3Router = createTRPCRouter({});
+```
+
+Finally, add the router to the **appRouter** in **src/server/api/root.ts**:
+
+```typescript,src/server/api/root.ts
+import { createTRPCRouter } from "./trpc";
+import { exampleRouter } from "./routers/example";
+import { s3Router } from "./routers/s3";
+
+export const appRouter = createTRPCRouter({
+  example: exampleRouter,
+  s3: s3Router,
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### Listing objects in the bucket
+
+The first procedure we will be implementing is a simple one that will list all the objects in our S3 bucket. This will be used to display the files that have already been uploaded to the bucket.
+
+```typescript,src/server/api/routers/s3.ts
+import { z } from "zod";
+
+import { createTRPCRouter, publicProcedure } from "../trpc";
+import { env } from "../../../env/server.mjs";
+
+export const s3Router = createTRPCRouter({
+  getObjects: publicProcedure.query(async ({ ctx }) => {
+    const { s3 } = ctx;
+
+    const listObjectsOutput = await s3.listObjectsV2({
+      Bucket: env.BUCKET_NAME,
+    });
+
+    return listObjectsOutput.Contents ?? [];
+  }),
+});
+```
+
+### Creating a presigned URL for regular uploads
+
+The next procedure we will be implementing is a bit more complex. It will be used to create a presigned URL that can be used to upload a file with a specific key to our S3 bucket. This will be used for regular uploads, where the entire file is uploaded in a single request.
+
+```typescript,src/server/api/routers/s3.ts
+// ...
+import { PutObjectCommand, UploadPartCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { TRPCError } from "@trpc/server";
+
+export const s3Router = createTRPCRouter({
+  // ...
+  getStandardUploadPresignedUrl: publicProcedure
+    .input(z.object({ key: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { key } = input;
+      const { s3 } = ctx;
+
+      const putObjectCommand = new PutObjectCommand({
+        Bucket: env.BUCKET_NAME,
+        Key: key,
+      });
+
+      return await getSignedUrl(s3, putObjectCommand);
+    }),
+});
+```
+
+### Creating presigned URLs for multipart uploads
+
+Next we will be implementing a procedure that will be used to create presigned URLs for multipart uploads. This will be used to upload a file in multiple parts, so we need a presigned URL for each part. Before creating the URLS, the multipart upload needs to be initialized, so we will be doing that as well.
+
+```typescript,src/server/api/routers/s3.ts
+export const s3Router = createTRPCRouter({
+  // ...
+  getMultipartUploadPresignedUrl: publicProcedure
+    .input(z.object({ key: z.string(), filePartTotal: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const { key, filePartTotal } = input;
+      const { s3 } = ctx;
+
+      const uploadId = (
+        await s3.createMultipartUpload({
+          Bucket: env.BUCKET_NAME,
+          Key: key,
+        })
+      ).UploadId;
+
+      if (!uploadId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Could not create multipart upload",
+        });
+      }
+
+      const urls: Promise<{ url: string; partNumber: number }>[] = [];
+
+      for (let i = 1; i <= filePartTotal; i++) {
+        const uploadPartCommand = new UploadPartCommand({
+          Bucket: env.BUCKET_NAME,
+          Key: key,
+          UploadId: uploadId,
+          PartNumber: i,
+        });
+
+        const url = getSignedUrl(s3, uploadPartCommand).then((url) => ({
+          url,
+          partNumber: i,
+        }));
+
+        urls.push(url);
+      }
+
+      return {
+        uploadId,
+        urls: await Promise.all(urls),
+      };
+    }),
+});
+```
+
+### Completing a multipart upload
+
+Finally, we will be implementing a procedure that will be used to complete a multipart upload. This will be used after all the parts have been uploaded to S3. Completing the upload will make the file available in the bucket and is a required step for S3.
+
+```typescript,src/server/api/routers/s3.ts
+export const s3Router = createTRPCRouter({
+  // ...
+  completeMultipartUpload: publicProcedure
+    .input(
+      z.object({
+        key: z.string(),
+        uploadId: z.string(),
+        parts: z.array(
+          z.object({
+            ETag: z.string(),
+            PartNumber: z.number(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { key, uploadId, parts } = input;
+      const { s3 } = ctx;
+
+      const completeMultipartUploadOutput = await s3.completeMultipartUpload({
+        Bucket: env.BUCKET_NAME,
+        Key: key,
+        UploadId: uploadId,
+        MultipartUpload: {
+          Parts: parts,
+        },
+      });
+
+      return completeMultipartUploadOutput;
+    }),
+});
+```
+
+To complete a multipart upload, we need to provide the upload ID and the parts that were uploaded. The parts are an array of objects that contain the part number and the ETag of the part. The ETag is a unique identifier for the part that is returned when the part is uploaded. The client will need to keep track of the ETag for each part and send it to the server when the upload is completed.
+
+Side note: if you ever want to abort a multipart upload, you can use the **abortMultipartUpload** API.
+
+## Building the UI
+
+Now that we have the API set up, we can start building the UI.
+First, let's add some useful CSS to **src/styles/global.css**:
+
+```css,src/styles/global.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#__next,
+html,
+body {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+@layer components {
+  .dropzone-container {
+    @apply flex h-[300px] w-[300px] flex-col items-center justify-between rounded-lg border text-center border-zinc-500 bg-zinc-200 p-[40px] py-8 align-middle text-zinc-500 shadow-inner;
+  }
+
+  .submit-button {
+    @apply px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-800 disabled:opacity-70 disabled:hover:bg-blue-600 disabled:cursor-not-allowed duration-150
+  }
+}
+```
+
+### Regular upload dropzone
+
+Let's start by creating a component that will be used to upload a file in a single request. This will be a relatively simple component.
+
+```typescript,src/components/StandardDropzone.tsx
+import { useCallback, useMemo, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import axios from "axios";
+
+import { api } from "../utils/api";
+
+export const StandardDropzone = () => {
+  const [presignedUrl, setPresignedUrl] = useState<string | null>(null);
+  const { mutateAsync: fetchPresignedUrls } =
+    api.s3.getStandardUploadPresignedUrl.useMutation();
+  const [submitDisabled, setSubmitDisabled] = useState(true);
+  const apiUtils = api.useContext();
+
+  const { getRootProps, getInputProps, isDragActive, acceptedFiles } =
+    useDropzone({
+      maxFiles: 1,
+      maxSize: 5 * 2 ** 30, // roughly 5GB
+      multiple: false,
+      onDropAccepted: (files, _event) => {
+        const file = files[0] as File;
+
+        fetchPresignedUrls({
+          key: file.name,
+        })
+          .then((url) => {
+            setPresignedUrl(url);
+            setSubmitDisabled(false);
+          })
+          .catch((err) => console.error(err));
+      },
+    });
+
+  const files = useMemo(() => {
+    if (!submitDisabled)
+      return acceptedFiles.map((file) => (
+        <li key={file.name}>
+          {file.name} - {file.size} bytes
+        </li>
+      ));
+    return null;
+  }, [acceptedFiles, submitDisabled]);
+
+  const handleSubmit = useCallback(async () => {
+    if (acceptedFiles.length > 0 && presignedUrl !== null) {
+      const file = acceptedFiles[0] as File;
+      await axios
+        .put(presignedUrl, file.slice(), {
+          headers: { "Content-Type": file.type },
+        })
+        .then((response) => {
+          console.log(response);
+          console.log("Successfully uploaded ", file.name);
+        })
+        .catch((err) => console.error(err));
+      setSubmitDisabled(true);
+      await apiUtils.s3.getObjects.invalidate();
+    }
+  }, [acceptedFiles, apiUtils.s3.getObjects, presignedUrl]);
+
+  return (
+    <section>
+      <h2 className="text-lg font-semibold">Standard Dropzone</h2>
+      <p className="mb-3">Simple example for uploading one file at a time</p>
+      <div {...getRootProps()} className="dropzone-container">
+        <input {...getInputProps()} />
+        {isDragActive ? (
+          <div className="flex h-full items-center justify-center font-semibold">
+            <p>Drop the file here...</p>
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center font-semibold">
+            <p>Drag n drop file here, or click to select files</p>
+          </div>
+        )}
+      </div>
+      <aside className="my-2">
+        <h4 className="font-semibold text-zinc-400">Files pending upload</h4>
+        <ul>{files}</ul>
+      </aside>
+      <button
+        onClick={() => void handleSubmit()}
+        disabled={
+          presignedUrl === null || acceptedFiles.length === 0 || submitDisabled
+        }
+        className="submit-button"
+      >
+        Upload
+      </button>
+    </section>
+  );
+};
+```
+
+Some implementation notes:
+
+We're using the **useDropzone** hook to handle the file drop logic. This hook is provided by the **react-dropzone** library. We fetch the presigned URL from the API **onDropAccepted** and store the URL in state.
+
+On submit, we use the **axios** library to make a PUT request to the presigned URL. We also invalidate the **getObjects** query to update the list of objects in the bucket.
+
+### Multipart upload dropzone
+
+The multipart dropzone is a bit more complex because we need to handle and keep track of uploads and presigned URLs for each part of the whole file. We also need to split the file into parts before uploading.
+
+```typescript,src/components/MultipartDropzone.tsx
+import { useCallback, useMemo, useState } from "react";
+import { api } from "../utils/api";
+import { useDropzone } from "react-dropzone";
+import axios from "axios";
+
+// determines the ideal file part size for multipart upload based on file's total size
+const calculateChunkSize = (fileSize: number) => {
+  const FiveGB = 5 * 2 ** 30;
+  const FiveHundredGB = 500 * 2 ** 30;
+  const FiveTB = 5 * 2 ** 40;
+  if (fileSize <= FiveGB) {
+    return 50 * 2 ** 20; // 50MB
+  } else if (fileSize <= FiveHundredGB) {
+    return 50 * 2 ** 20; // 50MB
+  } else if (fileSize <= FiveTB) {
+    return Math.ceil(FiveTB / 10000); // use the full 10k allowed parts
+  }
+
+  return 500 * 2 ** 20; // 500MB
+};
+
+const splitFileIntoParts = (file: File) => {
+  const chunkSize = calculateChunkSize(file.size);
+  const numberOfChunks = Math.ceil(file.size / chunkSize);
+  let chunk = 0;
+  const fileParts: File[] = [];
+  while (chunk < numberOfChunks) {
+    const chunkStart = chunk * chunkSize;
+    const chunkEnd = Math.min(file.size, chunkStart + chunkSize);
+    const filePartBlob = file.slice(chunkStart, chunkEnd);
+    const filePartName = `CHUNK${chunk}-${file.name}`;
+    const filePart = new File([filePartBlob], filePartName);
+    fileParts.push(filePart);
+    chunk += 1;
+  }
+  const partsAsObj: { [partNumber: number]: File } = {};
+  for (let i = 1; i <= fileParts.length; i++) {
+    partsAsObj[i] = fileParts[i - 1] as File;
+  }
+  return partsAsObj;
+};
+
+export const MultipartDropzone = () => {
+  // presigned URLs for uploading each file part
+  const [partPresignedUrls, setPartPresignedUrls] = useState<
+    { url: string; partNumber: number }[]
+  >([]);
+  const [fileParts, setFileParts] = useState<{ [partNumber: number]: File }>(
+    {}
+  );
+  const [uploadId, setUploadId] = useState<string>("");
+  const [submitDisabled, setSubmitDisabled] = useState(true);
+
+  const { mutateAsync: fetchPresignedUrls } =
+    api.s3.getMultipartUploadPresignedUrl.useMutation();
+  const { mutateAsync: completeUpload } =
+    api.s3.completeMultipartUpload.useMutation();
+  const apiUtils = api.useContext();
+
+  const { getRootProps, getInputProps, isDragActive, acceptedFiles } =
+    useDropzone({
+      maxFiles: 1,
+      maxSize: 5 * 2 ** 40, // roughly 5TB
+      minSize: 1 * 2 ** 20, // 1MB -> S3 limitation
+      multiple: false,
+      onDropAccepted: (files, event) => {
+        const file = files[0] as File;
+
+        const parts = splitFileIntoParts(file);
+        setFileParts(parts);
+
+        fetchPresignedUrls({
+          key: file.name,
+          filePartTotal: Object.keys(parts).length,
+        })
+          .then((response) => {
+            if (response) {
+              const urls = response.urls.map((data) => ({
+                url: data.url,
+                partNumber: data.partNumber,
+              }));
+              setPartPresignedUrls(urls);
+              setUploadId(response.uploadId);
+              setSubmitDisabled(false);
+            }
+          })
+          .catch((error) => console.error(error));
+      },
+    });
+
+  const files = useMemo(() => {
+    if (!submitDisabled)
+      return acceptedFiles.map((file) => (
+        <li key={file.name}>
+          {file.name} - {file.size} bytes
+        </li>
+      ));
+    return null;
+  }, [acceptedFiles, submitDisabled]);
+
+  const handleSubmit = useCallback(async () => {
+    const uploadPromises: Promise<{
+      PartNumber: number;
+      ETag: string;
+    }>[] = [];
+    if (acceptedFiles.length > 0) {
+      const key = (acceptedFiles[0] as File).name;
+      for (const { url, partNumber } of partPresignedUrls) {
+        const file = fileParts[partNumber] as File;
+        uploadPromises.push(
+          axios
+            .put(url, file.slice(), {
+              onUploadProgress(progressEvent) {
+                console.log(
+                  `part #${partNumber} upload progress: ${
+                    progressEvent.loaded
+                  } of ${progressEvent.total as number} bytes uploaded`
+                );
+              },
+            })
+            .then((response) => ({
+              ETag: response.headers.etag as string, // Entity tag for the uploaded object
+              PartNumber: partNumber,
+            }))
+        );
+      }
+
+      const awaitedUploads = await Promise.all(uploadPromises);
+
+      await completeUpload({ parts: awaitedUploads, key, uploadId });
+      console.log("Successfully uploaded ", key);
+      await apiUtils.s3.getObjects.invalidate();
+      setSubmitDisabled(true);
+    }
+  }, [
+    acceptedFiles,
+    apiUtils.s3.getObjects,
+    completeUpload,
+    fileParts,
+    partPresignedUrls,
+    uploadId,
+  ]);
+
+  return (
+    <section>
+      <h2 className="text-lg font-semibold">Multipart Upload Dropzone</h2>
+      <p className="mb-3">Example dropzone that performs a multipart upload</p>
+      <div {...getRootProps()} className="dropzone-container">
+        <input {...getInputProps()} />
+        {isDragActive ? (
+          <div className="flex h-full items-center justify-center font-semibold">
+            <p>Drop the file here...</p>
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center font-semibold">
+            <p>Drag n drop file here, or click to select files</p>
+          </div>
+        )}
+      </div>
+      <aside className="my-2">
+        <h4 className="font-semibold text-zinc-400">Files pending upload</h4>
+        <ul>{files}</ul>
+      </aside>
+      <button
+        onClick={() => void handleSubmit()}
+        disabled={submitDisabled}
+        className="submit-button"
+      >
+        Upload
+      </button>
+    </section>
+  );
+};
+```
+
+Some implementation notes:
+
+**onDropAccepted** we split the file into parts and then fetch the presigned URLs for each part. We then set the state for the file parts and the presigned URLs.
+
+**handleSubmit** we then iterate over the presigned URLs and upload each part, keeping track of the **PartNumber** and **ETag** returned for each upload. Once all parts have been uploaded, we call the **completeUpload** mutation to complete the multipart upload. During the upload, we console log the progress of each part using the **onUploadProgress** callback provided by **axios**.
+
+### Putting it all together
+
+Now that we have our dropzones implemented, let's add them to our **src/pages/index.tsx** file as well as a list component to list the files in the bucket.
+
+```typescript,src/pages/index.tsx
+import { type NextPage } from "next";
+import { StandardDropzone } from "../components/StandardDropzone";
+import { MultipartDropzone } from "../components/MultipartDropzone";
+import type { RouterOutputs } from "../utils/api";
+import { api } from "../utils/api";
+
+// Lists the objects that have been uploaded to S3
+const UploadedObjects = ({
+  objects,
+}: {
+  objects: RouterOutputs["s3"]["getObjects"];
+}) => {
+  if (!objects || objects.length === 0)
+    return <div>No objects uploaded yet.</div>;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 className="text-lg font-semibold">Uploaded Objects</h2>
+      {objects.map((object) => (
+        <div key={object.Key}>
+          <a
+            href={`https://t3-app-dropzone-example.s3.amazonaws.com/${
+              object.Key as string
+            }`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {object.Key}
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const Home: NextPage = () => {
+  const { data, isLoading } = api.s3.getObjects.useQuery();
+
+  return (
+    <>
+      <main className="dark h-full bg-zinc-900 p-10 text-zinc-50">
+        <h1 className="mb-2 text-center text-xl font-semibold">
+          create-t3-app dropzone examples with react-dropzone + axios + S3
+          presigned URLs
+        </h1>
+        <p className="mb-8 text-center">
+          Open DevTools to see logs and learn how these components work
+        </p>
+        <div className="flex justify-center gap-32">
+          <StandardDropzone />
+          <MultipartDropzone />
+        </div>
+        <div className="mt-12 flex justify-center">
+          {!isLoading && data && <UploadedObjects objects={data} />}
+        </div>
+      </main>
+    </>
+  );
+};
+
+export default Home;
+```
+
+## Conclusion
+
+<Video
+  src="https://cdn.uploadjoy.com/nickramkissoon-blog/nickramkissoon-blog/t3-s3/demo.mp4"
+  type="video/mp4"
+  muted
+  autoPlay
+  loop
+/>
+
+In this post, we integrated S3 presigned URLs with create-t3-app to create a dropzone component that can upload files to S3. We also created a multipart upload dropzone that can upload large files to S3 in multiple parts.
+
+This functionality can be used and extended to a wide variety of use cases, from uploading and sharing photos to storing log files and other data.
+
+## Resources
+
+- [AWS S3](https://aws.amazon.com/s3/)
+- [AWS S3 presigned URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html)
+- [create-t3-app](https://create.t3.gg/)
+- [react-dropzone](https://react-dropzone.js.org/)
+
+## An S3 alternative
+
+AWS S3 is great, but it can be a pain to set up and manage every time you start a new project that needs object storage. It gets even more complex if you want to share stored objects publicly on the web via a CDN like Cloudfront.
+
+If you are interested in a simpler, more developer friendly alternative to S3 + Cloudfront, check out [Uploadjoy](https://uploadjoy.com/), an object storage service and CDN that I've been building with best practices and developer experience in mind.

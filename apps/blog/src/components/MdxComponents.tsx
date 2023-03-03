@@ -84,7 +84,7 @@ export const MDXComponents = {
           {filename && (
             <div
               className="px-3 rounded-sm \
-              bg-slate-200 text-slate-900 w-fit font-normal flex overflow-x-scroll"
+              bg-slate-200 text-slate-900 w-fit font-normal flex overflow-x-auto"
             >
               {filename}
             </div>

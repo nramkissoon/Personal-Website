@@ -216,7 +216,7 @@ export const s3Router = createTRPCRouter({
   // ...
   getStandardUploadPresignedUrl: publicProcedure
     .input(z.object({ key: z.string() }))
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { key } = input;
       const { s3 } = ctx;
 

@@ -2,8 +2,22 @@
 
 module.exports = {
   reactStrictMode: true,
-  pageExtensions: ['ts', 'tsx'],
+  pageExtensions: ["ts", "tsx"],
   images: {
-    domains: ['komonitor-blog.s3.amazonaws.com', 'cdn.uploadjoy.com'],
-  }
+    domains: ["komonitor-blog.s3.amazonaws.com", "cdn.uploadjoy.com"],
+  },
+  async redirects() {
+    return [
+      {
+        source: "/posts/integrate-stripe-t3",
+        destination: "https://nkrkn.me/writing/t3-stripe",
+        permanent: true,
+      },
+      {
+        source: "/posts/t3-s3-presigned-urls",
+        destination: "https://nkrkn.me/writing/t3-s3",
+        permanent: true,
+      },
+    ];
+  },
 };

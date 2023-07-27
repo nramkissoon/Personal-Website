@@ -20,4 +20,18 @@ module.exports = {
       },
     ];
   },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/posts/integrate-stripe-t3",
+          destination: "https://nkrkn.me/writing/t3-stripe",
+        },
+        {
+          source: "/posts/t3-s3-presigned-urls",
+          destination: "https://nkrkn.me/writing/t3-s3",
+        },
+      ],
+    };
+  },
 };
